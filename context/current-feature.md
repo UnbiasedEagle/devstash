@@ -2,7 +2,7 @@
 
 <!-- Feature Name -->
 
-Mock Data
+Dashboard UI Phase 1
 
 ## Status
 
@@ -14,12 +14,20 @@ Completed
 
 <!-- Goals & requirements -->
 
-- Single source of truth for dashboard mock data in `src/lib/mock-data.ts`
-- Includes current user, item types, collections and items
+- ShadCN UI initialization and components
+- Dashboard route at /dashboard
+- Main dashboard layout and any global styles
+- Dark mode by default
+- Top bar with search and new item button (display only)
+- Placeholder for sidebar and main area (h2 with "Sidebar" and "Main")
 
 ## Notes
 
 <!-- Any extra notes -->
+
+- Phase 1 of 3. Spec: @context/features/dashboard-phase-1-spec.md
+- Reference screenshot: @context/screenshots/dashboard-ui-main.png
+- Uses mock data from `src/lib/mock-data.ts`
 
 ## History
 
@@ -27,3 +35,4 @@ Completed
 
 - Initial Next.js project setup and boilerplate cleanup
 - Added mock data for dashboard UI (`src/lib/mock-data.ts`)
+- Completed Dashboard UI Phase 1: ShadCN init, /dashboard route, dark mode, top bar, sidebar/main placeholders
