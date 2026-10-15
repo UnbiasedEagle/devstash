@@ -157,6 +157,15 @@ Postgres treats nulls as distinct, so system-type name uniqueness needs a partia
 
 ---
 
+## 📸 Screenshots
+
+Use these as a reference for the dashboard UI. They don't have to be matched exactly.
+
+- `@context/screenshots/dashboard-ui-main.png`
+- `@context/screenshots/dashboard-ui-drawer.png`
+
+---
+
 ## 🔌 Server Architecture
 
 Mutations and data fetching use **Server Actions** and Server Components. Route handlers are only used where required, such as Better Auth (`/api/auth/*`) and Stripe webhooks.
