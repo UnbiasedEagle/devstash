@@ -1,25 +1,25 @@
 # Current Feature
 
-Seed Data
+Dashboard Database Phase 1
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
-- `prisma/seed.ts` registered in `prisma.config.ts`, with an `npm run db:seed` script run through `tsx`
-- Seed the 7 system item types
-- Seed a demo user (`demo@devstash.io`) with a hashed password
-- Seed the 6 collections from the mock data with realistic items, tags, favorites and pins
-- Safe to re-run: upsert system types, recreate only the demo user's data
-- Own Prisma client with the Neon adapter, not the shared one
+- Query functions under `src/lib/db/` for items, collections and item types
+- Stats cards, recent collections, pinned items and recent items read from the database
+- Collection card color derived from its most common item type
+- Query result types in `src/types/`
+- Queries scoped to the demo user through one helper
+- Empty states for each section
 
 ## Notes
 
-- Spec: @context/features/seed-data-spec.md
-- Seed against the Neon development branch, never production
-- Confirm the password hash format matches what Better Auth expects before relying on the demo login
+- Spec: @context/features/dashboard-db-phase-1-spec.md
+- The sidebar is not part of this phase and keeps using the mock data
+- Do not delete `src/lib/mock-data.ts` or `src/lib/collections.ts` in this phase
 
 ## History
 
