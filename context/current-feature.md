@@ -4,7 +4,7 @@ Dashboard UI Phase 2
 
 ## Status
 
-In Progress
+Completed
 
 ## Goals
 
@@ -25,3 +25,4 @@ In Progress
 - Initial Next.js project setup and boilerplate cleanup
 - Added mock data for dashboard UI (`src/lib/mock-data.ts`)
 - Completed Dashboard UI Phase 1: ShadCN init, /dashboard route, dark mode, top bar, sidebar/main placeholders
+- Completed Dashboard UI Phase 2: collapsible sidebar with icon rail, item types, favorite/recent collections, user area, mobile drawer
