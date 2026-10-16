@@ -1,6 +1,6 @@
 # Current Feature
 
-Prisma and Neon Setup
+Database Models
 
 ## Status
 
@@ -8,19 +8,20 @@ Completed
 
 ## Goals
 
-- Install Prisma and the Neon driver adapter
-- Initialize `prisma/schema.prisma` with the `postgresql` provider
-- Pooled connection string for the app, direct connection string for migrations
-- `DATABASE_URL` and `DIRECT_URL` in `.env`, `.env.example` added, `.env` git-ignored
-- Shared Prisma client in `src/lib/prisma.ts`
-- npm scripts for generate, migrate dev and studio
-- Verify the connection with a throwaway query
+- Define User, Item, ItemType, Collection, Tag, ItemTag models in `prisma/schema.prisma`
+- Add Better Auth tables: Session, Account, Verification
+- `ContentType` enum (TEXT / FILE / URL)
+- Cascade deletes from User, indexes on foreign keys and filter columns
+- Tag names unique per user
+- Initial migration via `prisma migrate dev --name init`
+- Partial unique index on system ItemType names added to the migration SQL
+- `prisma migrate status` confirms migrations are in sync
 
 ## Notes
 
-- Spec: @context/features/prisma-neon-setup-spec.md
-- Use the Neon development branch connection strings, not production
-- Never commit credentials or real connection strings
+- Spec: @context/features/database-models-spec.md
+- Never use `prisma db push`, only `prisma migrate dev`
+- Run migrations against the Neon development branch, not production
 
 ## History
 
@@ -30,3 +31,4 @@ Completed
 - Completed Dashboard UI Phase 2: collapsible sidebar with icon rail, item types, favorite/recent collections, user area, mobile drawer
 - Completed Dashboard UI Phase 3: stats overview, recent collections, pinned and recent items, new fonts and graphite theme
 - Completed Prisma and Neon setup: Prisma 7 with Neon adapter, pooled/direct connection strings, shared client in `src/lib/prisma.ts`, db npm scripts
+- Completed database models: User, Item, ItemType, Collection, Tag, ItemTag and Better Auth tables, `init` migration with partial unique index for system item type names
