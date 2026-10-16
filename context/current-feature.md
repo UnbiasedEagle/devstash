@@ -1,6 +1,6 @@
 # Current Feature
 
-Database Models
+Seed Data
 
 ## Status
 
@@ -8,20 +8,18 @@ Completed
 
 ## Goals
 
-- Define User, Item, ItemType, Collection, Tag, ItemTag models in `prisma/schema.prisma`
-- Add Better Auth tables: Session, Account, Verification
-- `ContentType` enum (TEXT / FILE / URL)
-- Cascade deletes from User, indexes on foreign keys and filter columns
-- Tag names unique per user
-- Initial migration via `prisma migrate dev --name init`
-- Partial unique index on system ItemType names added to the migration SQL
-- `prisma migrate status` confirms migrations are in sync
+- `prisma/seed.ts` registered in `prisma.config.ts`, with an `npm run db:seed` script run through `tsx`
+- Seed the 7 system item types
+- Seed a demo user (`demo@devstash.io`) with a hashed password
+- Seed the 6 collections from the mock data with realistic items, tags, favorites and pins
+- Safe to re-run: upsert system types, recreate only the demo user's data
+- Own Prisma client with the Neon adapter, not the shared one
 
 ## Notes
 
-- Spec: @context/features/database-models-spec.md
-- Never use `prisma db push`, only `prisma migrate dev`
-- Run migrations against the Neon development branch, not production
+- Spec: @context/features/seed-data-spec.md
+- Seed against the Neon development branch, never production
+- Confirm the password hash format matches what Better Auth expects before relying on the demo login
 
 ## History
 
@@ -32,3 +30,4 @@ Completed
 - Completed Dashboard UI Phase 3: stats overview, recent collections, pinned and recent items, new fonts and graphite theme
 - Completed Prisma and Neon setup: Prisma 7 with Neon adapter, pooled/direct connection strings, shared client in `src/lib/prisma.ts`, db npm scripts
 - Completed database models: User, Item, ItemType, Collection, Tag, ItemTag and Better Auth tables, `init` migration with partial unique index for system item type names
+- Completed seed data: re-runnable `prisma/seed.ts` via `npm run db:seed` with system item types, demo user, 6 collections, 13 items and tags
