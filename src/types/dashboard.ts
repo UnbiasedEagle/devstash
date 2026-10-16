@@ -34,6 +34,7 @@ export interface SidebarCollection {
   id: string;
   name: string;
   itemCount: number;
+  color: string;
 }
 
 export interface SidebarCollections {
