@@ -1,16 +1,14 @@
 import Link from "next/link";
 import { Star } from "lucide-react";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
-import { itemTypes, type Collection } from "@/lib/mock-data";
+import type { DashboardCollection } from "@/types/dashboard";
 
 interface CollectionCardProps {
-  collection: Collection;
+  collection: DashboardCollection;
 }
 
 export default function CollectionCard({ collection }: CollectionCardProps) {
-  const types = itemTypes.filter((type) =>
-    collection.itemTypeIds.includes(type.id),
-  );
+  const types = collection.itemTypes;
 
   return (
     <Link
@@ -31,9 +29,11 @@ export default function CollectionCard({ collection }: CollectionCardProps) {
           />
         )}
       </div>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {collection.description}
-      </p>
+      {collection.description && (
+        <p className="mt-1 text-sm text-muted-foreground">
+          {collection.description}
+        </p>
+      )}
       <div className="mt-5 flex items-center justify-between">
         <div className="flex gap-1.5">
           {types.map((type) => {
