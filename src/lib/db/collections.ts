@@ -19,6 +19,31 @@ function byMostUsed(a: TypeUsage, b: TypeUsage) {
   return b.count - a.count || a.itemType.name.localeCompare(b.itemType.name);
 }
 
+async function findTypeUsageByCollection(
+  collectionIds: string[],
+): Promise<Map<string, TypeUsage[]>> {
+  const typeUsage = await prisma.item.groupBy({
+    by: ["collectionId", "itemTypeId"],
+    where: { collectionId: { in: collectionIds } },
+    _count: { _all: true },
+  });
+  const itemTypes = await prisma.itemType.findMany({
+    where: { id: { in: typeUsage.map(({ itemTypeId }) => itemTypeId) } },
+    select: itemTypeSummarySelect,
+  });
+  const itemTypeById = new Map(itemTypes.map((type) => [type.id, type]));
+
+  const usageByCollection = new Map<string, TypeUsage[]>();
+  for (const { collectionId, itemTypeId, _count } of typeUsage) {
+    if (!collectionId) continue;
+    const usage = usageByCollection.get(collectionId) ?? [];
+    usage.push({ itemType: itemTypeById.get(itemTypeId)!, count: _count._all });
+    usageByCollection.set(collectionId, usage);
+  }
+  for (const usage of usageByCollection.values()) usage.sort(byMostUsed);
+  return usageByCollection;
+}
+
 async function findSidebarCollections(
   userId: string,
   isFavorite: boolean,
@@ -30,10 +55,16 @@ async function findSidebarCollections(
     take: limit,
     select: { id: true, name: true, _count: { select: { items: true } } },
   });
+  const usageByCollection = await findTypeUsageByCollection(
+    collections.map(({ id }) => id),
+  );
 
   return collections.map(({ _count, ...collection }) => ({
     ...collection,
     itemCount: _count.items,
+    color:
+      usageByCollection.get(collection.id)?.[0]?.itemType.color ??
+      EMPTY_COLLECTION_COLOR,
   }));
 }
 
@@ -65,25 +96,12 @@ export async function getRecentCollections(
     },
   });
 
-  const typeUsage = await prisma.item.groupBy({
-    by: ["collectionId", "itemTypeId"],
-    where: { collectionId: { in: collections.map(({ id }) => id) } },
-    _count: { _all: true },
-  });
-  const itemTypes = await prisma.itemType.findMany({
-    where: { id: { in: typeUsage.map(({ itemTypeId }) => itemTypeId) } },
-    select: itemTypeSummarySelect,
-  });
-  const itemTypeById = new Map(itemTypes.map((type) => [type.id, type]));
+  const usageByCollection = await findTypeUsageByCollection(
+    collections.map(({ id }) => id),
+  );
 
   return collections.map(({ _count, ...collection }) => {
-    const usage = typeUsage
-      .filter(({ collectionId }) => collectionId === collection.id)
-      .map(({ itemTypeId, _count: { _all } }) => ({
-        itemType: itemTypeById.get(itemTypeId)!,
-        count: _all,
-      }))
-      .sort(byMostUsed);
+    const usage = usageByCollection.get(collection.id) ?? [];
 
     return {
       ...collection,

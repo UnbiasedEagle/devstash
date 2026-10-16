@@ -125,7 +125,7 @@ async function SidebarNav() {
               href={`/collections/${collection.id}`}
               className={rowClass}
             >
-              <Folder className="size-4 text-muted-foreground" />
+              <Folder className="size-4" style={{ color: collection.color }} />
               <span className="flex-1">{collection.name}</span>
               <Star className="size-4 fill-yellow-500 text-yellow-500" />
             </Link>
@@ -141,7 +141,7 @@ async function SidebarNav() {
               href={`/collections/${collection.id}`}
               className={rowClass}
             >
-              <Folder className="size-4 text-muted-foreground" />
+              <Folder className="size-4" style={{ color: collection.color }} />
               <span className="flex-1">{collection.name}</span>
               <span className="text-xs text-muted-foreground">
                 {collection.itemCount}
