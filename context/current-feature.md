@@ -1,24 +1,26 @@
 # Current Feature
 
-Dashboard UI Phase 3
+Prisma and Neon Setup
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
-- Main area to the right of the sidebar
-- 4 stats cards at the top: items, collections, favorite items, favorite collections
-- Recent collections
-- Pinned items
-- 10 recent items
+- Install Prisma and the Neon driver adapter
+- Initialize `prisma/schema.prisma` with the `postgresql` provider
+- Pooled connection string for the app, direct connection string for migrations
+- `DATABASE_URL` and `DIRECT_URL` in `.env`, `.env.example` added, `.env` git-ignored
+- Shared Prisma client in `src/lib/prisma.ts`
+- npm scripts for generate, migrate dev and studio
+- Verify the connection with a throwaway query
 
 ## Notes
 
-- Phase 3 of 3. Spec: @context/features/dashboard-phase-3-spec.md
-- Reference screenshot: @context/screenshots/dashboard-ui-main.png (stats cards are not in the screenshot)
-- Uses mock data from `src/lib/mock-data.ts`
+- Spec: @context/features/prisma-neon-setup-spec.md
+- Use the Neon development branch connection strings, not production
+- Never commit credentials or real connection strings
 
 ## History
 
