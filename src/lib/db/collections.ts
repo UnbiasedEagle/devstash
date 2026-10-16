@@ -1,7 +1,12 @@
 import "server-only";
 import { itemTypeSummarySelect } from "@/lib/db/item-types";
 import { prisma } from "@/lib/prisma";
-import type { DashboardCollection, ItemTypeSummary } from "@/types/dashboard";
+import type {
+  DashboardCollection,
+  ItemTypeSummary,
+  SidebarCollection,
+  SidebarCollections,
+} from "@/types/dashboard";
 
 const EMPTY_COLLECTION_COLOR = "#6b7280";
 
@@ -12,6 +17,35 @@ interface TypeUsage {
 
 function byMostUsed(a: TypeUsage, b: TypeUsage) {
   return b.count - a.count || a.itemType.name.localeCompare(b.itemType.name);
+}
+
+async function findSidebarCollections(
+  userId: string,
+  isFavorite: boolean,
+  limit?: number,
+): Promise<SidebarCollection[]> {
+  const collections = await prisma.collection.findMany({
+    where: { userId, isFavorite },
+    orderBy: isFavorite ? { name: "asc" } : { updatedAt: "desc" },
+    take: limit,
+    select: { id: true, name: true, _count: { select: { items: true } } },
+  });
+
+  return collections.map(({ _count, ...collection }) => ({
+    ...collection,
+    itemCount: _count.items,
+  }));
+}
+
+export async function getSidebarCollections(
+  userId: string,
+  recentLimit: number,
+): Promise<SidebarCollections> {
+  const [favorites, recent] = await Promise.all([
+    findSidebarCollections(userId, true),
+    findSidebarCollections(userId, false, recentLimit),
+  ]);
+  return { favorites, recent };
 }
 
 export async function getRecentCollections(

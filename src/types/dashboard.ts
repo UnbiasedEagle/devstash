@@ -30,6 +30,22 @@ export interface DashboardCollection {
   itemTypes: ItemTypeSummary[];
 }
 
+export interface SidebarCollection {
+  id: string;
+  name: string;
+  itemCount: number;
+}
+
+export interface SidebarCollections {
+  favorites: SidebarCollection[];
+  recent: SidebarCollection[];
+}
+
+export interface SidebarUser {
+  name: string;
+  email: string;
+}
+
 export interface DashboardStats {
   totalItems: number;
   totalCollections: number;
