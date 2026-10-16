@@ -4,7 +4,7 @@ Dashboard UI Phase 3
 
 ## Status
 
-In Progress
+Completed
 
 ## Goals
 
@@ -26,3 +26,4 @@ In Progress
 - Added mock data for dashboard UI (`src/lib/mock-data.ts`)
 - Completed Dashboard UI Phase 1: ShadCN init, /dashboard route, dark mode, top bar, sidebar/main placeholders
 - Completed Dashboard UI Phase 2: collapsible sidebar with icon rail, item types, favorite/recent collections, user area, mobile drawer
+- Completed Dashboard UI Phase 3: stats overview, recent collections, pinned and recent items, new fonts and graphite theme
