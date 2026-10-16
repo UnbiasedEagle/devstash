@@ -1,26 +1,25 @@
 # Current Feature
 
-Dashboard Database Phase 2
+Dashboard Skeletons
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
-- Sidebar item types with real item counts
-- Favorite collections and the 4 most recent non-favorite collections with item counts
-- User name and email from the database
-- Sidebar query result types in `src/types/`
-- Works with `cacheComponents`, with a loading placeholder
-- Empty states for favorite and recent collections
-- Ask before deleting `mock-data.ts` and `collections.ts` once unused
+- ShadCN `skeleton` component
+- Main area skeletons that mirror the stats card, collection cards and item rows
+- Sidebar skeletons for Types, Favorites, Recent and the user area
+- Real headings stay visible while only the data is skeletonized
+- No layout shift when data loads
+- Skeletons are `aria-hidden` and sit next to the component they mirror
+- Replace the current `DashboardSkeleton` and sidebar fallbacks
 
 ## Notes
 
-- Spec: @context/features/dashboard-db-phase-2-spec.md
-- Keep the current look and the collapsible sidebar and mobile drawer behavior
-- Keep every query scoped to the demo user through the existing helper
+- Spec: @context/features/dashboard-skeletons-spec.md
+- No changes to the queries or the data returned
 
 ## History
 
