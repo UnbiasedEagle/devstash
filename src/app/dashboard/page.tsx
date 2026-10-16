@@ -1,9 +1,11 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { Pin } from "lucide-react";
-import CollectionCard from "@/components/dashboard/CollectionCard";
-import ItemRow from "@/components/dashboard/ItemRow";
-import StatsCards from "@/components/dashboard/StatsCards";
+import CollectionCard, {
+  CollectionCardSkeleton,
+} from "@/components/dashboard/CollectionCard";
+import ItemRow, { ItemRowSkeleton } from "@/components/dashboard/ItemRow";
+import StatsCards, { StatsCardsSkeleton } from "@/components/dashboard/StatsCards";
 import { getRecentCollections } from "@/lib/db/collections";
 import { getPinnedItems, getRecentItems } from "@/lib/db/items";
 import { getDashboardStats } from "@/lib/db/stats";
@@ -12,6 +14,10 @@ import type { DashboardItem } from "@/types/dashboard";
 
 const RECENT_COLLECTION_LIMIT = 6;
 const RECENT_ITEM_LIMIT = 10;
+const PINNED_SKELETON_ROWS = 3;
+
+const itemListClass =
+  "divide-y divide-border overflow-hidden rounded-xl border border-border bg-card";
 
 function EmptyState({ message }: { message: string }) {
   return (
@@ -31,7 +37,7 @@ function ItemList({
   if (items.length === 0) return <EmptyState message={emptyMessage} />;
 
   return (
-    <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+    <ul className={itemListClass}>
       {items.map((item) => (
         <ItemRow key={item.id} item={item} />
       ))}
@@ -39,48 +45,77 @@ function ItemList({
   );
 }
 
-function DashboardSkeleton() {
+function ItemListSkeleton({ rows }: { rows: number }) {
   return (
-    <div aria-hidden className="h-96 animate-pulse rounded-xl bg-muted/40" />
+    <ul aria-hidden className={itemListClass}>
+      {Array.from({ length: rows }, (_, index) => (
+        <ItemRowSkeleton key={index} />
+      ))}
+    </ul>
   );
+}
+
+async function StatsSection() {
+  await connection();
+  const stats = await getDashboardStats(await getCurrentUserId());
+  return <StatsCards stats={stats} />;
+}
+
+async function RecentCollectionsSection() {
+  await connection();
+  const collections = await getRecentCollections(
+    await getCurrentUserId(),
+    RECENT_COLLECTION_LIMIT,
+  );
+
+  if (collections.length === 0) return <EmptyState message="No collections yet." />;
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {collections.map((collection) => (
+        <CollectionCard key={collection.id} collection={collection} />
+      ))}
+    </div>
+  );
+}
+
+async function PinnedItemsSection() {
+  await connection();
+  const items = await getPinnedItems(await getCurrentUserId());
+  return <ItemList items={items} emptyMessage="No pinned items yet." />;
+}
+
+async function RecentItemsSection() {
+  await connection();
+  const items = await getRecentItems(await getCurrentUserId(), RECENT_ITEM_LIMIT);
+  return <ItemList items={items} emptyMessage="No items yet." />;
 }
 
 export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-10">
       <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-      <Suspense fallback={<DashboardSkeleton />}>
-        <DashboardContent />
+
+      <Suspense fallback={<StatsCardsSkeleton />}>
+        <StatsSection />
       </Suspense>
-    </div>
-  );
-}
-
-async function DashboardContent() {
-  await connection();
-  const userId = await getCurrentUserId();
-  const [stats, recentCollections, pinnedItems, recentItems] = await Promise.all([
-    getDashboardStats(userId),
-    getRecentCollections(userId, RECENT_COLLECTION_LIMIT),
-    getPinnedItems(userId),
-    getRecentItems(userId, RECENT_ITEM_LIMIT),
-  ]);
-
-  return (
-    <div className="space-y-10">
-      <StatsCards stats={stats} />
 
       <section>
         <h2 className="mb-4 text-lg font-semibold">Recent collections</h2>
-        {recentCollections.length === 0 ? (
-          <EmptyState message="No collections yet." />
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {recentCollections.map((collection) => (
-              <CollectionCard key={collection.id} collection={collection} />
-            ))}
-          </div>
-        )}
+        <Suspense
+          fallback={
+            <div
+              aria-hidden
+              className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+            >
+              {Array.from({ length: RECENT_COLLECTION_LIMIT }, (_, index) => (
+                <CollectionCardSkeleton key={index} />
+              ))}
+            </div>
+          }
+        >
+          <RecentCollectionsSection />
+        </Suspense>
       </section>
 
       <section>
@@ -88,12 +123,16 @@ async function DashboardContent() {
           <Pin className="size-4 text-muted-foreground" />
           Pinned
         </h2>
-        <ItemList items={pinnedItems} emptyMessage="No pinned items yet." />
+        <Suspense fallback={<ItemListSkeleton rows={PINNED_SKELETON_ROWS} />}>
+          <PinnedItemsSection />
+        </Suspense>
       </section>
 
       <section>
         <h2 className="mb-4 text-lg font-semibold">Recent items</h2>
-        <ItemList items={recentItems} emptyMessage="No items yet." />
+        <Suspense fallback={<ItemListSkeleton rows={RECENT_ITEM_LIMIT} />}>
+          <RecentItemsSection />
+        </Suspense>
       </section>
     </div>
   );

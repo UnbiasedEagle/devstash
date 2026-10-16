@@ -1,7 +1,37 @@
+import { Skeleton } from "@/components/ui/skeleton";
 import type { DashboardStats } from "@/types/dashboard";
 
 interface StatsCardsProps {
   stats: DashboardStats;
+}
+
+const STAT_COUNT = 4;
+const LEGEND_PLACEHOLDER_COUNT = 7;
+
+export function StatsCardsSkeleton() {
+  return (
+    <section
+      aria-hidden
+      className="overflow-hidden rounded-xl border border-border bg-card"
+    >
+      <div className="grid grid-cols-2 divide-border max-lg:divide-y lg:grid-cols-4 lg:divide-x">
+        {Array.from({ length: STAT_COUNT }, (_, index) => (
+          <div key={index} className="px-5 py-4 max-lg:odd:border-r">
+            <Skeleton className="h-5 w-24" />
+            <Skeleton className="mt-1 h-9 w-12" />
+          </div>
+        ))}
+      </div>
+      <div className="border-t border-border px-5 py-4">
+        <Skeleton className="h-2 rounded-full" />
+        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1">
+          {Array.from({ length: LEGEND_PLACEHOLDER_COUNT }, (_, index) => (
+            <Skeleton key={index} className="h-5 w-16" />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 export default function StatsCards({ stats: data }: StatsCardsProps) {

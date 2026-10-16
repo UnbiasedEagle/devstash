@@ -1,9 +1,23 @@
 import { Pin, Star } from "lucide-react";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { DashboardItem } from "@/types/dashboard";
 
 interface ItemRowProps {
   item: DashboardItem;
+}
+
+export function ItemRowSkeleton() {
+  return (
+    <li aria-hidden className="flex items-center gap-4 px-4 py-3">
+      <Skeleton className="size-9 shrink-0" />
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <Skeleton className="h-5 w-1/3" />
+        <Skeleton className="h-5 w-3/5" />
+      </div>
+      <Skeleton className="h-4 w-12 shrink-0" />
+    </li>
+  );
 }
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {

@@ -1,10 +1,30 @@
 import Link from "next/link";
 import { Star } from "lucide-react";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { DashboardCollection } from "@/types/dashboard";
 
 interface CollectionCardProps {
   collection: DashboardCollection;
+}
+
+export function CollectionCardSkeleton() {
+  return (
+    <div
+      aria-hidden
+      className="flex flex-col rounded-xl border border-border bg-card p-5"
+    >
+      <Skeleton className="h-6 w-2/5" />
+      <Skeleton className="mt-2 h-5 w-4/5" />
+      <div className="mt-5 flex items-center justify-between">
+        <div className="flex gap-1.5">
+          <Skeleton className="size-6" />
+          <Skeleton className="size-6" />
+        </div>
+        <Skeleton className="h-5 w-14" />
+      </div>
+    </div>
+  );
 }
 
 export default function CollectionCard({ collection }: CollectionCardProps) {
