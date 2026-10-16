@@ -4,7 +4,7 @@ Dashboard Skeletons
 
 ## Status
 
-In Progress
+Completed
 
 ## Goals
 
@@ -33,3 +33,4 @@ In Progress
 - Completed seed data: re-runnable `prisma/seed.ts` via `npm run db:seed` with system item types, demo user, 6 collections, 13 items and tags
 - Completed dashboard database phase 1: query layer in `src/lib/db/` and main dashboard area (stats, recent collections, pinned and recent items) read from the database
 - Completed dashboard database phase 2: sidebar item types, favorite and recent collections and user area read from the database, mock data removed
+- Completed dashboard skeletons: ShadCN skeleton component and loading skeletons for the stats card, collection cards, item rows and sidebar, with each section streaming in on its own
