@@ -1,23 +1,23 @@
 # Current Feature
 
-Dashboard UI Phase 2
+Dashboard UI Phase 3
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
-- Collapsible sidebar with drawer icon in the top bar
-- Item types with links to /items/TYPE (e.g. /items/snippets)
-- Favorite collections and most recent collections
-- User avatar area at the bottom
-- Always a drawer on mobile view
+- Main area to the right of the sidebar
+- 4 stats cards at the top: items, collections, favorite items, favorite collections
+- Recent collections
+- Pinned items
+- 10 recent items
 
 ## Notes
 
-- Phase 2 of 3. Spec: @context/features/dashboard-phase-2-spec.md
-- Reference screenshot: @context/screenshots/dashboard-ui-main.png
+- Phase 3 of 3. Spec: @context/features/dashboard-phase-3-spec.md
+- Reference screenshot: @context/screenshots/dashboard-ui-main.png (stats cards are not in the screenshot)
 - Uses mock data from `src/lib/mock-data.ts`
 
 ## History
