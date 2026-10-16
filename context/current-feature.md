@@ -1,6 +1,6 @@
 # Current Feature
 
-Dashboard Database Phase 2
+Dashboard Skeletons
 
 ## Status
 
@@ -8,19 +8,18 @@ Completed
 
 ## Goals
 
-- Sidebar item types with real item counts
-- Favorite collections and the 4 most recent non-favorite collections with item counts
-- User name and email from the database
-- Sidebar query result types in `src/types/`
-- Works with `cacheComponents`, with a loading placeholder
-- Empty states for favorite and recent collections
-- Ask before deleting `mock-data.ts` and `collections.ts` once unused
+- ShadCN `skeleton` component
+- Main area skeletons that mirror the stats card, collection cards and item rows
+- Sidebar skeletons for Types, Favorites, Recent and the user area
+- Real headings stay visible while only the data is skeletonized
+- No layout shift when data loads
+- Skeletons are `aria-hidden` and sit next to the component they mirror
+- Replace the current `DashboardSkeleton` and sidebar fallbacks
 
 ## Notes
 
-- Spec: @context/features/dashboard-db-phase-2-spec.md
-- Keep the current look and the collapsible sidebar and mobile drawer behavior
-- Keep every query scoped to the demo user through the existing helper
+- Spec: @context/features/dashboard-skeletons-spec.md
+- No changes to the queries or the data returned
 
 ## History
 
@@ -34,3 +33,4 @@ Completed
 - Completed seed data: re-runnable `prisma/seed.ts` via `npm run db:seed` with system item types, demo user, 6 collections, 13 items and tags
 - Completed dashboard database phase 1: query layer in `src/lib/db/` and main dashboard area (stats, recent collections, pinned and recent items) read from the database
 - Completed dashboard database phase 2: sidebar item types, favorite and recent collections and user area read from the database, mock data removed
+- Completed dashboard skeletons: ShadCN skeleton component and loading skeletons for the stats card, collection cards, item rows and sidebar, with each section streaming in on its own

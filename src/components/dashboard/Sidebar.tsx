@@ -3,6 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Folder, Layers, Settings, Star } from "lucide-react";
 import CollapsibleSection from "@/components/dashboard/CollapsibleSection";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getSidebarCollections } from "@/lib/db/collections";
 import { getItemTypeCounts } from "@/lib/db/item-types";
 import { getCurrentUser } from "@/lib/db/user";
@@ -26,6 +27,59 @@ const COLLAPSED_INVISIBLE = "md:group-data-[collapsed=true]/sidebar:invisible";
 
 const rowClass =
   "flex items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-accent";
+
+const TYPE_SKELETON_ROWS = 7;
+const FAVORITE_SKELETON_ROWS = 3;
+
+function RowSkeleton() {
+  return (
+    <div aria-hidden className={rowClass}>
+      <Skeleton className="size-4" />
+      <Skeleton className={`h-4 flex-1 ${COLLAPSED_INVISIBLE}`} />
+    </div>
+  );
+}
+
+function SidebarNavSkeleton() {
+  return (
+    <nav className="flex-1 overflow-x-hidden overflow-y-auto px-2 pb-4">
+      <CollapsibleSection title="Types">
+        {Array.from({ length: TYPE_SKELETON_ROWS }, (_, index) => (
+          <RowSkeleton key={index} />
+        ))}
+      </CollapsibleSection>
+
+      <div className={`mx-1 mt-3 border-t border-border ${COLLAPSED_INVISIBLE}`} />
+      <div className={COLLAPSED_INVISIBLE}>
+        <CollapsibleSection title="Collections">
+          <SectionLabel>Favorites</SectionLabel>
+          {Array.from({ length: FAVORITE_SKELETON_ROWS }, (_, index) => (
+            <RowSkeleton key={index} />
+          ))}
+          <SectionLabel>Recent</SectionLabel>
+          {Array.from({ length: RECENT_COLLECTION_LIMIT }, (_, index) => (
+            <RowSkeleton key={index} />
+          ))}
+        </CollapsibleSection>
+      </div>
+    </nav>
+  );
+}
+
+function SidebarUserSkeleton() {
+  return (
+    <UserAreaShell>
+      <Skeleton aria-hidden className="size-9 shrink-0 rounded-full" />
+      <div
+        aria-hidden
+        className={`min-w-0 flex-1 space-y-1.5 ${COLLAPSED_INVISIBLE}`}
+      >
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-3 w-32" />
+      </div>
+    </UserAreaShell>
+  );
+}
 
 async function SidebarNav() {
   await connection();
@@ -143,16 +197,10 @@ export default function Sidebar() {
         </span>
       </div>
 
-      <Suspense fallback={<div className="flex-1" />}>
+      <Suspense fallback={<SidebarNavSkeleton />}>
         <SidebarNav />
       </Suspense>
-      <Suspense
-        fallback={
-          <UserAreaShell>
-            <div className="size-9 shrink-0 animate-pulse rounded-full bg-muted" />
-          </UserAreaShell>
-        }
-      >
+      <Suspense fallback={<SidebarUserSkeleton />}>
         <SidebarUser />
       </Suspense>
     </div>
