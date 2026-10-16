@@ -1,16 +1,11 @@
 import Link from "next/link";
 import { Folder, Layers, Settings, Star } from "lucide-react";
 import CollapsibleSection from "@/components/dashboard/CollapsibleSection";
+import { latestUpdate } from "@/lib/collections";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
-import { collections, currentUser, itemTypes, items } from "@/lib/mock-data";
+import { collections, currentUser, itemTypes } from "@/lib/mock-data";
 
 const RECENT_COLLECTION_LIMIT = 4;
-
-function latestUpdate(collectionId: string) {
-  return items
-    .filter((item) => item.collectionId === collectionId)
-    .reduce((latest, item) => (item.updatedAt > latest ? item.updatedAt : latest), "");
-}
 
 const favoriteCollections = collections.filter((c) => c.isFavorite);
 const recentCollections = collections
@@ -26,7 +21,7 @@ const initials = currentUser.name
 
 function SectionLabel({ children }: { children: string }) {
   return (
-    <h3 className="px-3 pb-1 pt-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+    <h3 className="px-3 pb-1 pt-3 text-xs font-medium text-muted-foreground">
       {children}
     </h3>
   );
