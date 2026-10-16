@@ -1,9 +1,9 @@
 import { Pin, Star } from "lucide-react";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
-import { itemTypes, type Item } from "@/lib/mock-data";
+import type { DashboardItem } from "@/types/dashboard";
 
 interface ItemRowProps {
-  item: Item;
+  item: DashboardItem;
 }
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -13,17 +13,17 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
 });
 
 export default function ItemRow({ item }: ItemRowProps) {
-  const type = itemTypes.find((t) => t.id === item.itemTypeId);
-  const Icon = type ? ITEM_TYPE_ICONS[type.icon] : undefined;
+  const type = item.itemType;
+  const Icon = ITEM_TYPE_ICONS[type.icon];
 
   return (
     <li className="flex items-center gap-4 px-4 py-3 transition-colors hover:bg-accent/60">
       <span
-        title={type?.name}
+        title={type.name}
         className="flex size-9 shrink-0 items-center justify-center rounded-md"
-        style={{ backgroundColor: type ? `${type.color}1f` : undefined }}
+        style={{ backgroundColor: `${type.color}1f` }}
       >
-        {Icon && <Icon className="size-4" style={{ color: type?.color }} />}
+        {Icon && <Icon className="size-4" style={{ color: type.color }} />}
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -43,9 +43,11 @@ export default function ItemRow({ item }: ItemRowProps) {
             />
           )}
         </div>
-        <p className="mt-0.5 truncate text-sm text-muted-foreground">
-          {item.description}
-        </p>
+        {item.description && (
+          <p className="mt-0.5 truncate text-sm text-muted-foreground">
+            {item.description}
+          </p>
+        )}
       </div>
       <ul className="hidden gap-1.5 md:flex">
         {item.tags.map((tag) => (
@@ -59,9 +61,9 @@ export default function ItemRow({ item }: ItemRowProps) {
       </ul>
       <time
         className="w-12 shrink-0 text-right text-xs tabular-nums text-muted-foreground"
-        dateTime={item.updatedAt}
+        dateTime={item.updatedAt.toISOString()}
       >
-        {dateFormatter.format(new Date(item.updatedAt))}
+        {dateFormatter.format(item.updatedAt)}
       </time>
     </li>
   );

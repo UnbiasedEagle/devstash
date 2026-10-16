@@ -1,26 +1,18 @@
-import { collections, itemTypes, items } from "@/lib/mock-data";
+import type { DashboardStats } from "@/types/dashboard";
 
-interface Stat {
-  label: string;
-  value: number;
+interface StatsCardsProps {
+  stats: DashboardStats;
 }
 
-const totalItems = itemTypes.reduce((sum, type) => sum + type.count, 0);
+export default function StatsCards({ stats: data }: StatsCardsProps) {
+  const itemTypes = data.itemTypeCounts;
+  const stats = [
+    { label: "Items", value: data.totalItems },
+    { label: "Collections", value: data.totalCollections },
+    { label: "Favorite items", value: data.favoriteItems },
+    { label: "Favorite collections", value: data.favoriteCollections },
+  ];
 
-const stats: Stat[] = [
-  { label: "Items", value: totalItems },
-  { label: "Collections", value: collections.length },
-  {
-    label: "Favorite items",
-    value: items.filter((item) => item.isFavorite).length,
-  },
-  {
-    label: "Favorite collections",
-    value: collections.filter((collection) => collection.isFavorite).length,
-  },
-];
-
-export default function StatsCards() {
   return (
     <section
       aria-label="Stash overview"
