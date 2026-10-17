@@ -3,6 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Folder, Layers, Settings, Star } from "lucide-react";
 import CollapsibleSection from "@/components/dashboard/CollapsibleSection";
+import ProBadge from "@/components/dashboard/ProBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getSidebarCollections } from "@/lib/db/collections";
 import { getItemTypeCounts } from "@/lib/db/item-types";
@@ -10,6 +11,7 @@ import { getCurrentUser } from "@/lib/db/user";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 
 const RECENT_COLLECTION_LIMIT = 4;
+const PRO_TYPE_NAMES = ["file", "image"];
 
 function SectionLabel({ children }: { children: string }) {
   return (
@@ -104,6 +106,11 @@ async function SidebarNav() {
               <span className={`flex-1 ${COLLAPSED_INVISIBLE}`}>
                 {type.name}
               </span>
+              {PRO_TYPE_NAMES.includes(type.name.toLowerCase()) && (
+                <span className={COLLAPSED_INVISIBLE}>
+                  <ProBadge />
+                </span>
+              )}
               <span className={`text-xs text-muted-foreground ${COLLAPSED_INVISIBLE}`}>
                 {type.count}
               </span>
