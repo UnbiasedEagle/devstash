@@ -10,6 +10,21 @@ export const itemTypeSummarySelect = {
   color: true,
 } satisfies Prisma.ItemTypeSelect;
 
+const SYSTEM_TYPE_ORDER = [
+  "Snippet",
+  "Prompt",
+  "Command",
+  "Note",
+  "File",
+  "Image",
+  "URL",
+];
+
+function typeRank(name: string) {
+  const index = SYSTEM_TYPE_ORDER.indexOf(name);
+  return index === -1 ? SYSTEM_TYPE_ORDER.length : index;
+}
+
 export async function getItemTypeCounts(userId: string): Promise<ItemTypeCount[]> {
   const itemTypes = await prisma.itemType.findMany({
     where: { OR: [{ userId: null }, { userId }] },
@@ -20,8 +35,13 @@ export async function getItemTypeCounts(userId: string): Promise<ItemTypeCount[]
     orderBy: { name: "asc" },
   });
 
-  return itemTypes.map(({ _count, ...itemType }) => ({
-    ...itemType,
-    count: _count.items,
-  }));
+  return itemTypes
+    .map(({ _count, ...itemType }) => ({
+      ...itemType,
+      count: _count.items,
+    }))
+    .sort(
+      (a, b) =>
+        typeRank(a.name) - typeRank(b.name) || a.name.localeCompare(b.name),
+    );
 }
