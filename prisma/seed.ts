@@ -10,6 +10,7 @@ const prisma = new PrismaClient({
 
 const DEMO_EMAIL = "demo@devstash.io";
 const DEMO_PASSWORD = "demo-password-123";
+const MINIMAL = process.argv.includes("--minimal");
 
 interface SeedItem {
   title: string;
@@ -296,6 +297,12 @@ async function seedItemTypes(): Promise<Map<string, string>> {
 }
 
 async function seedDemoUser(): Promise<string> {
+  // The minimal seed targets production, where deleting the user would cascade to its data.
+  const existing = MINIMAL
+    ? await prisma.user.findUnique({ where: { email: DEMO_EMAIL } })
+    : null;
+  if (existing) return existing.id;
+
   await prisma.user.deleteMany({ where: { email: DEMO_EMAIL } });
 
   const userId = randomUUID();
@@ -369,6 +376,7 @@ async function main() {
 
   const userId = await seedDemoUser();
   console.log(`Seeded demo user ${DEMO_EMAIL}`);
+  if (MINIMAL) return;
 
   const tagIds = await seedTags(userId);
   const itemCount = await seedCollections(userId, typeIds, tagIds);
