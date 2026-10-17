@@ -42,11 +42,6 @@ export interface SidebarCollections {
   recent: SidebarCollection[];
 }
 
-export interface SidebarUser {
-  name: string;
-  email: string;
-}
-
 export interface DashboardStats {
   totalItems: number;
   totalCollections: number;
