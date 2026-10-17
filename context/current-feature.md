@@ -1,25 +1,12 @@
 # Current Feature
 
-Vercel CI/CD
-
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- Deploy to Vercel from the GitHub repo, with `main` going to production and every PR or branch getting a preview
-- `vercel-build` npm script that runs `prisma generate`, `prisma migrate deploy` and `next build`
-- GitHub Actions workflow (`.github/workflows/ci.yml`) running `npm ci`, lint and typecheck on PRs and pushes to `main`
-- `DATABASE_URL` and `DIRECT_URL` set in Vercel for Production and Preview, pointing at the existing Neon `production` branch for Production and `development` branch for Preview
-- Required environment variables documented in `.env.example`
-
 ## Notes
-
-- Spec: @context/features/vercel-cicd-spec.md
-- Vercel deploys on its own, so the workflow only runs checks
-- Never run `prisma db push` or the seed script as part of a deploy
-- No application code changes
 
 ## History
 
@@ -34,3 +21,5 @@ In Progress
 - Completed dashboard database phase 1: query layer in `src/lib/db/` and main dashboard area (stats, recent collections, pinned and recent items) read from the database
 - Completed dashboard database phase 2: sidebar item types, favorite and recent collections and user area read from the database, mock data removed
 - Completed dashboard skeletons: ShadCN skeleton component and loading skeletons for the stats card, collection cards, item rows and sidebar, with each section streaming in on its own
+- Completed Vercel CI/CD: `vercel-build` script, GitHub Actions checks workflow, Vercel deploys from `main` with preview branches
+- Completed sidebar pro badge: reusable `ProBadge` pill shown on File and Image types in the sidebar, hidden when collapsed
