@@ -63,15 +63,17 @@ export default function StatsCards({ stats: data }: StatsCardsProps) {
         <div
           role="img"
           aria-label="Items by type"
-          className="flex h-2 gap-0.5 overflow-hidden rounded-full"
+          className="flex h-2 gap-0.5 overflow-hidden rounded-full bg-muted"
         >
-          {itemTypes.map((type) => (
-            <div
-              key={type.id}
-              className="min-w-1"
-              style={{ flexGrow: type.count, backgroundColor: type.color }}
-            />
-          ))}
+          {itemTypes
+            .filter((type) => type.count > 0)
+            .map((type) => (
+              <div
+                key={type.id}
+                className="min-w-1"
+                style={{ flexGrow: type.count, backgroundColor: type.color }}
+              />
+            ))}
         </div>
         <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted-foreground">
           {itemTypes.map((type) => (

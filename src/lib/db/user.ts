@@ -1,16 +1,16 @@
 import "server-only";
 import { cache } from "react";
-import { prisma } from "@/lib/prisma";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
 
-const DEMO_USER_EMAIL = "demo@devstash.io";
+export const getCurrentUser = cache(async () => {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect("/sign-in");
 
-// There is no auth yet, so every query is scoped to the seeded demo user.
-export const getCurrentUser = cache(() =>
-  prisma.user.findUniqueOrThrow({
-    where: { email: DEMO_USER_EMAIL },
-    select: { id: true, name: true, email: true },
-  }),
-);
+  const { id, name, email, image } = session.user;
+  return { id, name, email, image };
+});
 
 export async function getCurrentUserId() {
   const { id } = await getCurrentUser();

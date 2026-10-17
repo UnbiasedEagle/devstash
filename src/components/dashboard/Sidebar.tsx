@@ -4,6 +4,8 @@ import { connection } from "next/server";
 import { Folder, Layers, Settings, Star } from "lucide-react";
 import CollapsibleSection from "@/components/dashboard/CollapsibleSection";
 import ProBadge from "@/components/dashboard/ProBadge";
+import UserMenu from "@/components/dashboard/UserMenu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getSidebarCollections } from "@/lib/db/collections";
 import { getItemTypeCounts } from "@/lib/db/item-types";
@@ -27,6 +29,7 @@ function EmptyLabel({ children }: { children: string }) {
 }
 
 const COLLAPSED_INVISIBLE = "md:group-data-[collapsed=true]/sidebar:invisible";
+const COLLAPSED_HIDDEN = "md:group-data-[collapsed=true]/sidebar:hidden";
 
 const rowClass =
   "flex items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-accent";
@@ -179,20 +182,27 @@ async function SidebarUser() {
   const user = await getCurrentUser();
   const initials = user.name
     .split(" ")
+    .filter(Boolean)
     .map((part) => part[0])
     .join("")
-    .slice(0, 2);
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <UserAreaShell>
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium">
-        {initials}
-      </div>
-      <div className={`min-w-0 flex-1 ${COLLAPSED_INVISIBLE}`}>
+      <UserMenu name={user.name} email={user.email}>
+        <Avatar className="size-9">
+          {user.image && <AvatarImage src={user.image} alt={user.name} />}
+          <AvatarFallback className="font-medium text-foreground">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+      </UserMenu>
+      <div className={`min-w-0 flex-1 ${COLLAPSED_HIDDEN}`}>
         <p className="truncate text-sm font-medium">{user.name}</p>
         <p className="truncate text-xs text-muted-foreground">{user.email}</p>
       </div>
-      <Settings className={`size-4 text-muted-foreground ${COLLAPSED_INVISIBLE}`} />
+      <Settings className={`size-4 text-muted-foreground ${COLLAPSED_HIDDEN}`} />
     </UserAreaShell>
   );
 }
