@@ -1,25 +1,25 @@
 # Current Feature
 
-Dashboard Skeletons
+Vercel CI/CD
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
-- ShadCN `skeleton` component
-- Main area skeletons that mirror the stats card, collection cards and item rows
-- Sidebar skeletons for Types, Favorites, Recent and the user area
-- Real headings stay visible while only the data is skeletonized
-- No layout shift when data loads
-- Skeletons are `aria-hidden` and sit next to the component they mirror
-- Replace the current `DashboardSkeleton` and sidebar fallbacks
+- Deploy to Vercel from the GitHub repo, with `main` going to production and every PR or branch getting a preview
+- `vercel-build` npm script that runs `prisma generate`, `prisma migrate deploy` and `next build`
+- GitHub Actions workflow (`.github/workflows/ci.yml`) running `npm ci`, lint and typecheck on PRs and pushes to `main`
+- `DATABASE_URL` and `DIRECT_URL` set in Vercel for Production and Preview, pointing at the existing Neon `production` branch for Production and `development` branch for Preview
+- Required environment variables documented in `.env.example`
 
 ## Notes
 
-- Spec: @context/features/dashboard-skeletons-spec.md
-- No changes to the queries or the data returned
+- Spec: @context/features/vercel-cicd-spec.md
+- Vercel deploys on its own, so the workflow only runs checks
+- Never run `prisma db push` or the seed script as part of a deploy
+- No application code changes
 
 ## History
 
