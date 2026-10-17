@@ -10,3 +10,4 @@ Never run this unless the build passes and the user has tested the feature.
 5. Push the branch, switch to `main`, `git pull --ff-only`, merge the branch, push `main`. On merge conflicts or a rejected push, stop and explain.
 6. Ask before deleting the branch, then delete it locally and on the remote.
 7. Clean up `context/current-feature.md`: append a one-line entry to `## History` (`Completed <feature>: <short summary>`), then reset the rest to the empty template (`Not Started`, empty Goals and Notes). Leave this change uncommitted so it ships with the next feature's commit.
+8. Delete the `.playwright-mcp` folder if it exists.

@@ -23,3 +23,5 @@ Not Started
 - Completed dashboard skeletons: ShadCN skeleton component and loading skeletons for the stats card, collection cards, item rows and sidebar, with each section streaming in on its own
 - Completed Vercel CI/CD: `vercel-build` script, GitHub Actions checks workflow, Vercel deploys from `main` with preview branches
 - Completed sidebar pro badge: reusable `ProBadge` pill shown on File and Image types in the sidebar, hidden when collapsed
+- Completed auth core: Better Auth with Prisma adapter, `/api/auth/[...all]` handler, `/sign-in` and `/sign-up` pages with Zod validation, toast errors and redirect to `/dashboard`
+- Completed auth sessions: `src/proxy.ts` route protection, session-based current user replacing the demo user, real user in the sidebar with an avatar menu and sign out
