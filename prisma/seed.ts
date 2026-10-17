@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import bcrypt from "bcryptjs";
+import { hashPassword } from "better-auth/crypto";
 import { ContentType, PrismaClient } from "../src/generated/prisma/client";
 
 const prisma = new PrismaClient({
@@ -318,7 +318,7 @@ async function seedDemoUser(): Promise<string> {
           id: randomUUID(),
           accountId: userId,
           providerId: "credential",
-          password: await bcrypt.hash(DEMO_PASSWORD, 12),
+          password: await hashPassword(DEMO_PASSWORD),
         },
       },
     },
