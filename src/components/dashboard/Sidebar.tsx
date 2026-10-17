@@ -10,6 +10,7 @@ import { getItemTypeCounts } from "@/lib/db/item-types";
 import { getCurrentUser } from "@/lib/db/user";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 
+const FAVORITE_COLLECTION_LIMIT = 10;
 const RECENT_COLLECTION_LIMIT = 4;
 const PRO_TYPE_NAMES = ["file", "image"];
 
@@ -88,7 +89,11 @@ async function SidebarNav() {
   const user = await getCurrentUser();
   const [itemTypes, collections] = await Promise.all([
     getItemTypeCounts(user.id),
-    getSidebarCollections(user.id, RECENT_COLLECTION_LIMIT),
+    getSidebarCollections(
+      user.id,
+      FAVORITE_COLLECTION_LIMIT,
+      RECENT_COLLECTION_LIMIT,
+    ),
   ]);
 
   return (

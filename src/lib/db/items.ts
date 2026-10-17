@@ -21,11 +21,15 @@ function toDashboardItem({ tags, ...item }: ItemRecord): DashboardItem {
   return { ...item, tags: tags.map(({ tag }) => tag.name) };
 }
 
-export async function getPinnedItems(userId: string): Promise<DashboardItem[]> {
+export async function getPinnedItems(
+  userId: string,
+  limit: number,
+): Promise<DashboardItem[]> {
   const items = await prisma.item.findMany({
     where: { userId, isPinned: true },
     select: dashboardItemSelect,
     orderBy: { updatedAt: "desc" },
+    take: limit,
   });
   return items.map(toDashboardItem);
 }

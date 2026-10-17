@@ -35,9 +35,10 @@ async function findTypeUsageByCollection(
 
   const usageByCollection = new Map<string, TypeUsage[]>();
   for (const { collectionId, itemTypeId, _count } of typeUsage) {
-    if (!collectionId) continue;
+    const itemType = itemTypeById.get(itemTypeId);
+    if (!collectionId || !itemType) continue;
     const usage = usageByCollection.get(collectionId) ?? [];
-    usage.push({ itemType: itemTypeById.get(itemTypeId)!, count: _count._all });
+    usage.push({ itemType, count: _count._all });
     usageByCollection.set(collectionId, usage);
   }
   for (const usage of usageByCollection.values()) usage.sort(byMostUsed);
@@ -70,10 +71,11 @@ async function findSidebarCollections(
 
 export async function getSidebarCollections(
   userId: string,
+  favoriteLimit: number,
   recentLimit: number,
 ): Promise<SidebarCollections> {
   const [favorites, recent] = await Promise.all([
-    findSidebarCollections(userId, true),
+    findSidebarCollections(userId, true, favoriteLimit),
     findSidebarCollections(userId, false, recentLimit),
   ]);
   return { favorites, recent };

@@ -14,6 +14,7 @@ import type { DashboardItem } from "@/types/dashboard";
 
 const RECENT_COLLECTION_LIMIT = 6;
 const RECENT_ITEM_LIMIT = 10;
+const PINNED_ITEM_LIMIT = 20;
 const PINNED_SKELETON_ROWS = 3;
 
 const itemListClass =
@@ -81,7 +82,7 @@ async function RecentCollectionsSection() {
 
 async function PinnedItemsSection() {
   await connection();
-  const items = await getPinnedItems(await getCurrentUserId());
+  const items = await getPinnedItems(await getCurrentUserId(), PINNED_ITEM_LIMIT);
   return <ItemList items={items} emptyMessage="No pinned items yet." />;
 }
 
