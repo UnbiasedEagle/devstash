@@ -10,12 +10,14 @@ import { OAuthSection } from "@/components/auth/OAuthSection";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { signInSchema } from "@/lib/auth-schemas";
+import { useResendVerification } from "@/lib/use-resend-verification";
 import type { FieldErrors } from "@/types/auth";
 
 export function SignInForm() {
   const router = useRouter();
   const [errors, setErrors] = useState<FieldErrors>({});
   const [pending, setPending] = useState(false);
+  const { resend, startCooldown } = useResendVerification();
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -31,6 +33,19 @@ export function SignInForm() {
     try {
       const { error } = await authClient.signIn.email(parsed.data);
       if (error) {
+        if (error.code === "EMAIL_NOT_VERIFIED") {
+          startCooldown();
+          toast.error(
+            "Your email isn't verified yet. We sent you a new verification link.",
+            {
+              action: {
+                label: "Resend email",
+                onClick: () => resend(parsed.data.email),
+              },
+            },
+          );
+          return;
+        }
         toast.error(error.message ?? "Could not sign in");
         return;
       }

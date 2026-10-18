@@ -1,26 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { AuthField } from "@/components/auth/AuthField";
 import { OAuthSection } from "@/components/auth/OAuthSection";
+import { VerifyEmailNotice } from "@/components/auth/VerifyEmailNotice";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { signUpSchema } from "@/lib/auth-schemas";
+import { useResendVerification } from "@/lib/use-resend-verification";
 import type { FieldErrors } from "@/types/auth";
 
-const EXISTING_ACCOUNT_CODES = [
-  "USER_ALREADY_EXISTS",
-  "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL",
-];
-
 export function SignUpForm() {
-  const router = useRouter();
   const [errors, setErrors] = useState<FieldErrors>({});
   const [pending, setPending] = useState(false);
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const { resend, startCooldown, secondsLeft, isPending } =
+    useResendVerification();
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -41,20 +39,28 @@ export function SignUpForm() {
         password,
       });
       if (error) {
-        toast.error(
-          error.code && EXISTING_ACCOUNT_CODES.includes(error.code)
-            ? "An account with this email already exists. Sign in instead, or use Continue with GitHub."
-            : (error.message ?? "Could not create your account"),
-        );
+        toast.error(error.message ?? "Could not create your account");
         return;
       }
-      router.push("/dashboard");
-      router.refresh();
+      setSentTo(email);
+      startCooldown();
     } catch {
       toast.error("Something went wrong. Try again.");
     } finally {
       setPending(false);
     }
+  }
+
+  if (sentTo) {
+    return (
+      <VerifyEmailNotice
+        email={sentTo}
+        secondsLeft={secondsLeft}
+        isPending={isPending}
+        onResend={() => resend(sentTo)}
+        onChangeEmail={() => setSentTo(null)}
+      />
+    );
   }
 
   return (
