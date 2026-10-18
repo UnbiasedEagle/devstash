@@ -1,4 +1,8 @@
-import { FolderPlus, Plus, Search } from "lucide-react";
+import { FolderPlus, Search } from "lucide-react";
+import { Suspense } from "react";
+import NewItemButton, {
+  NewItemButtonFallback,
+} from "@/components/items/NewItemButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -21,10 +25,9 @@ export default function TopBar() {
           <FolderPlus />
           <span className="max-sm:hidden">New Collection</span>
         </Button>
-        <Button className="max-sm:size-8 max-sm:px-0" aria-label="New Item">
-          <Plus />
-          <span className="max-sm:hidden">New Item</span>
-        </Button>
+        <Suspense fallback={<NewItemButtonFallback />}>
+          <NewItemButton />
+        </Suspense>
       </div>
     </header>
   );

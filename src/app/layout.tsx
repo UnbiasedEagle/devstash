@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono, Schibsted_Grotesk } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   description:
     "One searchable home for your snippets, commands, prompts, notes and links.",
 };
+
+// Lets the on-screen keyboard shrink the page instead of covering it, so bottom-pinned buttons stay visible
+export const viewport: Viewport = { interactiveWidget: "resizes-content" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
