@@ -3,7 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { after } from "next/server";
 import { sendEmail } from "@/lib/email";
-import { consumeEmailQuota } from "@/lib/email-quota";
+import { clearEmailQuota, consumeEmailQuota } from "@/lib/email-quota";
 import {
   existingAccountEmail,
   githubSignInEmail,
@@ -12,28 +12,27 @@ import {
 } from "@/lib/email-templates";
 import { authEnv, flagsEnv, githubEnv } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
+import { redisRateLimitStorage } from "@/lib/rate-limit-storage";
 import { sanitizeImage, sanitizeName } from "@/lib/user-sanitize";
 
 export const auth = betterAuth({
   secret: authEnv.BETTER_AUTH_SECRET,
   baseURL: authEnv.BETTER_AUTH_URL,
   database: prismaAdapter(prisma, { provider: "postgresql" }),
-  // The default in-memory storage is per serverless instance, so limits would barely apply
   rateLimit: {
-    storage: "database",
+    // The default in-memory storage is per serverless instance, so limits would barely apply
+    customStorage: redisRateLimitStorage,
     // Not covered by the built-in strict rules, and it accepts password guesses
     customRules: { "/delete-user": { window: 60, max: 3 } },
   },
   user: {
     deleteUser: {
       enabled: true,
-      // Verification tokens and rate limit counters have no foreign key, so they don't cascade with the user
+      // Verification tokens and email counters have no foreign key, so they don't cascade with the user
       afterDelete: async (user) => {
         try {
           await prisma.verification.deleteMany({ where: { value: user.id } });
-          await prisma.rateLimit.deleteMany({
-            where: { key: { endsWith: `:${user.id}` } },
-          });
+          await clearEmailQuota(user.id);
         } catch (error) {
           console.error("Failed to clean up after account deletion", error);
         }
@@ -76,7 +75,7 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url }) => {
       after(async () => {
         try {
-          if (!(await consumeEmailQuota(`reset-password:${user.id}`))) return;
+          if (!(await consumeEmailQuota("reset-password", user.id))) return;
 
           const credentialAccount = await prisma.account.findFirst({
             where: { userId: user.id, providerId: "credential" },
@@ -98,7 +97,7 @@ export const auth = betterAuth({
     onExistingUserSignUp: async ({ user }) => {
       after(async () => {
         try {
-          if (!(await consumeEmailQuota(`existing-account:${user.id}`))) return;
+          if (!(await consumeEmailQuota("existing-account", user.id))) return;
 
           const signInUrl = new URL("/sign-in", authEnv.BETTER_AUTH_URL);
           const { subject, html } = existingAccountEmail(
@@ -124,7 +123,7 @@ export const auth = betterAuth({
       // Sent after the response so timing doesn't reveal whether an account exists, while keeping the function alive on serverless
       after(async () => {
         try {
-          if (!(await consumeEmailQuota(`verification:${user.id}`))) return;
+          if (!(await consumeEmailQuota("verification", user.id))) return;
           await sendEmail({ to: user.email, subject, html });
         } catch (error) {
           console.error("Failed to send verification email", error);

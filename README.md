@@ -36,6 +36,7 @@ Developers scatter their essentials across VS Code, Notion, chat history, bookma
 | Database | Neon PostgreSQL with Prisma 7 |
 | Auth | Better Auth (email and password, GitHub OAuth) |
 | Email | Resend |
+| Rate limiting | Upstash Redis |
 | UI | Tailwind CSS v4 and shadcn/ui |
 | Validation | Zod |
 | Hosting | Vercel, with GitHub Actions running lint and typecheck |
@@ -45,7 +46,7 @@ Developers scatter their essentials across VS Code, Notion, chat history, bookma
 - **Server Components first.** Pages fetch with Prisma directly, and route handlers exist only where a protocol requires them, such as the auth endpoints. Account changes go through the Better Auth client, and other mutations are planned as Server Actions.
 - **Every query is scoped to the signed-in user**, and inputs are validated with Zod.
 - **Migrations only.** Schema changes go through `prisma migrate`, and production runs `prisma migrate deploy` before the app starts.
-- **Auth is designed against abuse:** the same response for known and unknown emails, emails sent after the response so timing doesn't leak, a per-recipient cap on every email type, database-backed rate limits that hold across serverless instances, server-side cleanup of names and avatar URLs, and sessions revoked on password reset.
+- **Auth is designed against abuse:** the same response for known and unknown emails, emails sent after the response so timing doesn't leak, a per-recipient cap on every email type, Redis-backed rate limits that hold across serverless instances, server-side cleanup of names and avatar URLs, and sessions revoked on password reset.
 
 ## Getting started
 
@@ -73,9 +74,10 @@ Open [http://localhost:3000](http://localhost:3000) and create an account. A new
 | `BETTER_AUTH_URL` | App URL, `http://localhost:3000` locally |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | GitHub OAuth app. Callback URL: `{BETTER_AUTH_URL}/api/auth/callback/github` |
 | `RESEND_API_KEY`, `EMAIL_FROM` | Resend key and sender. The shared `onboarding@resend.dev` sender only delivers to your own Resend account address |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | [Upstash Redis](https://upstash.com) REST credentials, used for rate limiting. Set them in every Vercel environment, or builds fail |
 | `EMAIL_VERIFICATION_ENABLED` | Optional, defaults to `true`. Set to `false` locally to sign up without email verification, for example in browser tests. The build fails if it is `false` on Vercel production. With it off, signing up with an existing email returns an error instead of the generic response |
 
-The auth, GitHub, email and flag variables are validated at startup, so a missing value fails fast instead of breaking at runtime.
+The auth, GitHub, email, Redis and flag variables are validated at startup, so a missing value fails fast instead of breaking at runtime.
 
 ### Scripts
 
