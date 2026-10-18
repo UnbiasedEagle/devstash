@@ -20,7 +20,7 @@ export default function DashboardShell({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-dvh">
       {mobileOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/50 md:hidden"
@@ -30,7 +30,7 @@ export default function DashboardShell({
       <aside
         data-collapsed={!desktopOpen}
         className={cn(
-          "group/sidebar fixed inset-y-0 left-0 z-40 w-64 shrink-0 overflow-hidden border-r border-border bg-background transition-transform md:static md:translate-x-0 md:transition-[width]",
+          "group/sidebar fixed inset-y-0 left-0 z-40 h-dvh w-64 shrink-0 overflow-hidden border-r border-border bg-background transition-transform md:static md:h-auto md:translate-x-0 md:transition-[width]",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
           desktopOpen ? "md:w-64" : "md:w-14",
         )}
@@ -61,7 +61,7 @@ export default function DashboardShell({
           </div>
           {topBar}
         </div>
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
       </div>
     </div>
   );
