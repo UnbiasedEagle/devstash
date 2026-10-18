@@ -21,6 +21,9 @@ Developers scatter their essentials across VS Code, Notion, chat history, bookma
   - Collapsible sidebar with item types, favorite and recent collections, and the signed-in user
   - Mobile drawer with an account card and sign out
   - Loading skeletons that stream each section in on its own
+- **Profile page**
+  - Account details, plan, sign-in methods and usage against the free limits
+  - Edit your name and change your password, which signs out your other devices
 - **Data model** for users, items, item types, collections and tags, with a seed script for the system item types
 
 ## Tech stack
