@@ -11,8 +11,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "prisma db seed",
-    "db:seed:minimal": "prisma db seed -- --minimal"
+    "db:seed": "prisma db seed"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

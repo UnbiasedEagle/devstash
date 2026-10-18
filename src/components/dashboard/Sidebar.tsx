@@ -113,6 +113,7 @@ async function SidebarNav() {
             <Link
               key={type.id}
               href={`/items/${type.name.toLowerCase()}`}
+              aria-label={type.name}
               className={rowClass}
             >
               <Icon className="size-4" style={{ color: type.color }} />

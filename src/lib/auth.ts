@@ -3,22 +3,50 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { after } from "next/server";
 import { sendEmail } from "@/lib/email";
+import { consumeEmailQuota } from "@/lib/email-quota";
 import {
   existingAccountEmail,
   githubSignInEmail,
   resetPasswordEmail,
   verificationEmail,
 } from "@/lib/email-templates";
-import { flagsEnv, githubEnv } from "@/lib/env";
+import { authEnv, flagsEnv, githubEnv } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
-
-const ONE_HOUR_MS = 60 * 60 * 1000;
-const MAX_RESET_EMAILS_PER_HOUR = 3;
+import { sanitizeImage, sanitizeName } from "@/lib/user-sanitize";
 
 export const auth = betterAuth({
-  secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL,
+  secret: authEnv.BETTER_AUTH_SECRET,
+  baseURL: authEnv.BETTER_AUTH_URL,
   database: prismaAdapter(prisma, { provider: "postgresql" }),
+  // The default in-memory storage is per serverless instance, so limits would barely apply
+  rateLimit: { storage: "database" },
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => ({
+          data: {
+            ...user,
+            name: sanitizeName(user.name) || user.email.split("@")[0],
+            image: sanitizeImage(user.image),
+          },
+        }),
+      },
+      update: {
+        before: async (user) => {
+          const name = user.name === undefined ? undefined : sanitizeName(user.name);
+          return {
+            data: {
+              ...user,
+              ...(name ? { name } : {}),
+              ...(user.image === undefined
+                ? {}
+                : { image: sanitizeImage(user.image) }),
+            },
+          };
+        },
+      },
+    },
+  },
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
@@ -28,15 +56,7 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url }) => {
       after(async () => {
         try {
-          // The resend cooldown only exists in the browser, so cap emails per user here too
-          const recentRequests = await prisma.verification.count({
-            where: {
-              value: user.id,
-              identifier: { startsWith: "reset-password:" },
-              createdAt: { gt: new Date(Date.now() - ONE_HOUR_MS) },
-            },
-          });
-          if (recentRequests > MAX_RESET_EMAILS_PER_HOUR) return;
+          if (!(await consumeEmailQuota(`reset-password:${user.id}`))) return;
 
           const credentialAccount = await prisma.account.findFirst({
             where: { userId: user.id, providerId: "credential" },
@@ -58,7 +78,9 @@ export const auth = betterAuth({
     onExistingUserSignUp: async ({ user }) => {
       after(async () => {
         try {
-          const signInUrl = new URL("/sign-in", process.env.BETTER_AUTH_URL);
+          if (!(await consumeEmailQuota(`existing-account:${user.id}`))) return;
+
+          const signInUrl = new URL("/sign-in", authEnv.BETTER_AUTH_URL);
           const { subject, html } = existingAccountEmail(
             user.name,
             signInUrl.toString(),
@@ -82,6 +104,7 @@ export const auth = betterAuth({
       // Sent after the response so timing doesn't reveal whether an account exists, while keeping the function alive on serverless
       after(async () => {
         try {
+          if (!(await consumeEmailQuota(`verification:${user.id}`))) return;
           await sendEmail({ to: user.email, subject, html });
         } catch (error) {
           console.error("Failed to send verification email", error);

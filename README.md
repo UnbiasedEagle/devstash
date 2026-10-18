@@ -41,10 +41,10 @@ Developers scatter their essentials across VS Code, Notion, chat history, bookma
 
 ## How it's built
 
-- **Server Components first.** Pages fetch with Prisma directly. Mutations go through Server Actions, and route handlers exist only where a protocol requires them, such as the auth endpoints.
+- **Server Components first.** Pages fetch with Prisma directly, and route handlers exist only where a protocol requires them, such as the auth endpoints. Account changes go through the Better Auth client, and other mutations are planned as Server Actions.
 - **Every query is scoped to the signed-in user**, and inputs are validated with Zod.
 - **Migrations only.** Schema changes go through `prisma migrate`, and production runs `prisma migrate deploy` before the app starts.
-- **Auth is designed against abuse:** the same response for known and unknown emails, emails sent after the response so timing doesn't leak, a per-user cap on reset emails, and sessions revoked on password reset.
+- **Auth is designed against abuse:** the same response for known and unknown emails, emails sent after the response so timing doesn't leak, a per-recipient cap on every email type, database-backed rate limits that hold across serverless instances, server-side cleanup of names and avatar URLs, and sessions revoked on password reset.
 
 ## Getting started
 
@@ -74,7 +74,7 @@ Open [http://localhost:3000](http://localhost:3000) and create an account. A new
 | `RESEND_API_KEY`, `EMAIL_FROM` | Resend key and sender. The shared `onboarding@resend.dev` sender only delivers to your own Resend account address |
 | `EMAIL_VERIFICATION_ENABLED` | Optional, defaults to `true`. Set to `false` locally to sign up without email verification, for example in browser tests. The build fails if it is `false` on Vercel production. With it off, signing up with an existing email returns an error instead of the generic response |
 
-All of these are validated at startup, so a missing value fails fast instead of breaking at runtime.
+The auth, GitHub, email and flag variables are validated at startup, so a missing value fails fast instead of breaking at runtime.
 
 ### Scripts
 
@@ -85,7 +85,7 @@ All of these are validated at startup, so a missing value fails fast instead of 
 | `npm run lint` | ESLint |
 | `npx tsc --noEmit` | Typecheck |
 | `npm run db:migrate` | Create and apply migrations in development |
-| `npm run db:seed` | Seed system item types and sample data |
+| `npm run db:seed` | Seed the system item types |
 | `npm run db:studio` | Open Prisma Studio |
 
 ## Roadmap

@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+const authEnvSchema = z.object({
+  BETTER_AUTH_SECRET: z.string().min(1),
+  BETTER_AUTH_URL: z.url(),
+});
+
 const githubEnvSchema = z.object({
   GITHUB_CLIENT_ID: z.string().min(1),
   GITHUB_CLIENT_SECRET: z.string().min(1),
@@ -17,6 +22,7 @@ const flagsEnvSchema = z.object({
     .transform((value) => value === "true"),
 });
 
+export const authEnv = authEnvSchema.parse(process.env);
 export const githubEnv = githubEnvSchema.parse(process.env);
 export const flagsEnv = flagsEnvSchema.parse(process.env);
 

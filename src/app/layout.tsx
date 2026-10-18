@@ -15,7 +15,8 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "DevStash",
-  description: "Developer stash",
+  description:
+    "One searchable home for your snippets, commands, prompts, notes and links.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
