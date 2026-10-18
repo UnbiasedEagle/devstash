@@ -1,9 +1,10 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { connection } from "next/server";
-import { Folder, Layers, Settings, Star } from "lucide-react";
+import { Folder, Layers, Star } from "lucide-react";
 import CollapsibleSection from "@/components/dashboard/CollapsibleSection";
 import ProBadge from "@/components/dashboard/ProBadge";
+import SignOutButton from "@/components/dashboard/SignOutButton";
 import UserMenu from "@/components/dashboard/UserMenu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -202,7 +203,9 @@ async function SidebarUser() {
         <p className="truncate text-sm font-medium">{user.name}</p>
         <p className="truncate text-xs text-muted-foreground">{user.email}</p>
       </div>
-      <Settings className={`size-4 text-muted-foreground ${COLLAPSED_HIDDEN}`} />
+      <SignOutButton
+        className={`shrink-0 text-muted-foreground ${COLLAPSED_HIDDEN}`}
+      />
     </UserAreaShell>
   );
 }
