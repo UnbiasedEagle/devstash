@@ -19,7 +19,27 @@ export const auth = betterAuth({
   baseURL: authEnv.BETTER_AUTH_URL,
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   // The default in-memory storage is per serverless instance, so limits would barely apply
-  rateLimit: { storage: "database" },
+  rateLimit: {
+    storage: "database",
+    // Not covered by the built-in strict rules, and it accepts password guesses
+    customRules: { "/delete-user": { window: 60, max: 3 } },
+  },
+  user: {
+    deleteUser: {
+      enabled: true,
+      // Verification tokens and rate limit counters have no foreign key, so they don't cascade with the user
+      afterDelete: async (user) => {
+        try {
+          await prisma.verification.deleteMany({ where: { value: user.id } });
+          await prisma.rateLimit.deleteMany({
+            where: { key: { endsWith: `:${user.id}` } },
+          });
+        } catch (error) {
+          console.error("Failed to clean up after account deletion", error);
+        }
+      },
+    },
+  },
   databaseHooks: {
     user: {
       create: {

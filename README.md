@@ -24,6 +24,7 @@ Developers scatter their essentials across VS Code, Notion, chat history, bookma
 - **Profile page**
   - Account details, plan, sign-in methods and usage against the free limits
   - Edit your name and change your password, which signs out your other devices
+  - Delete your account, confirmed by typing your email and entering your password
 - **Data model** for users, items, item types, collections and tags, with a seed script for the system item types
 
 ## Tech stack

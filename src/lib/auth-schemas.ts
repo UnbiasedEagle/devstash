@@ -21,6 +21,13 @@ export const updateNameSchema = z.object({
     .max(80, "Name must be at most 80 characters"),
 });
 
+export const deleteAccountSchema = z.object({
+  password: z
+    .string()
+    .min(1, "Enter your password")
+    .max(128, "Password must be at most 128 characters"),
+});
+
 export const changePasswordSchema = z
   .object({
     currentPassword: z

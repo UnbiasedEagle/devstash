@@ -4,6 +4,7 @@ import AccountCard, {
   AccountCardSkeleton,
 } from "@/components/profile/AccountCard";
 import { ChangePasswordForm } from "@/components/profile/ChangePasswordForm";
+import { DeleteAccountSection } from "@/components/profile/DeleteAccountSection";
 import { EditNameForm } from "@/components/profile/EditNameForm";
 import { GitHubOnlyNote } from "@/components/profile/GitHubOnlyNote";
 import { SettingsSkeleton } from "@/components/profile/SettingsSkeleton";
@@ -29,15 +30,18 @@ async function SettingsSection() {
   await connection();
   const user = await getCurrentUser();
   const profile = await getProfile(user.id);
+  const hasPassword = profile.signInMethods.includes("credential");
 
   return (
     <>
       <EditNameForm key={user.name} initialName={user.name} />
-      {profile.signInMethods.includes("credential") ? (
-        <ChangePasswordForm />
-      ) : (
-        <GitHubOnlyNote />
-      )}
+      {hasPassword ? <ChangePasswordForm /> : <GitHubOnlyNote />}
+      <DeleteAccountSection
+        email={user.email}
+        hasPassword={hasPassword}
+        itemCount={profile.itemCount}
+        collectionCount={profile.collectionCount}
+      />
     </>
   );
 }
