@@ -52,3 +52,30 @@ export function existingAccountEmail(name: string, signInUrl: string) {
     }),
   };
 }
+
+export function resetPasswordEmail(name: string, url: string) {
+  return {
+    subject: "Reset your DevStash password",
+    html: renderEmail({
+      heading: "Reset your password",
+      intro: `Hi ${escapeHtml(name)}, we received a request to reset your DevStash password. This link expires in 1 hour.`,
+      buttonLabel: "Reset password",
+      url,
+      footer:
+        "If you didn't request this, you can ignore this email. Your password won't change.",
+    }),
+  };
+}
+
+export function githubSignInEmail(name: string, signInUrl: string) {
+  return {
+    subject: "Sign in to DevStash with GitHub",
+    html: renderEmail({
+      heading: "Sign in with GitHub",
+      intro: `Hi ${escapeHtml(name)}, we received a password reset request for this email, but your DevStash account signs in with GitHub, so it has no password to reset.`,
+      buttonLabel: "Go to sign in",
+      url: signInUrl,
+      footer: "If you didn't request this, you can ignore this email.",
+    }),
+  };
+}

@@ -85,6 +85,12 @@ export function SignInForm() {
           autoComplete="current-password"
           error={errors.password?.[0]}
         />
+        <Link
+          href="/forgot-password"
+          className="-mt-2 self-end text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+        >
+          Forgot password?
+        </Link>
         <Button
           type="submit"
           size="lg"

@@ -3,9 +3,17 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { after } from "next/server";
 import { sendEmail } from "@/lib/email";
-import { existingAccountEmail, verificationEmail } from "@/lib/email-templates";
+import {
+  existingAccountEmail,
+  githubSignInEmail,
+  resetPasswordEmail,
+  verificationEmail,
+} from "@/lib/email-templates";
 import { githubEnv } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
+
+const ONE_HOUR_MS = 60 * 60 * 1000;
+const MAX_RESET_EMAILS_PER_HOUR = 3;
 
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
@@ -15,6 +23,37 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 8,
     requireEmailVerification: true,
+    resetPasswordTokenExpiresIn: 3600,
+    revokeSessionsOnPasswordReset: true,
+    sendResetPassword: async ({ user, url }) => {
+      after(async () => {
+        try {
+          // The resend cooldown only exists in the browser, so cap emails per user here too
+          const recentRequests = await prisma.verification.count({
+            where: {
+              value: user.id,
+              identifier: { startsWith: "reset-password:" },
+              createdAt: { gt: new Date(Date.now() - ONE_HOUR_MS) },
+            },
+          });
+          if (recentRequests > MAX_RESET_EMAILS_PER_HOUR) return;
+
+          const credentialAccount = await prisma.account.findFirst({
+            where: { userId: user.id, providerId: "credential" },
+            select: { id: true },
+          });
+          const { subject, html } = credentialAccount
+            ? resetPasswordEmail(user.name, url)
+            : githubSignInEmail(
+                user.name,
+                new URL("/sign-in", new URL(url).origin).toString(),
+              );
+          await sendEmail({ to: user.email, subject, html });
+        } catch (error) {
+          console.error("Failed to send password reset email", error);
+        }
+      });
+    },
     // Better Auth answers duplicate sign-ups with a fake success, so this email is the only signal the owner gets
     onExistingUserSignUp: async ({ user }) => {
       after(async () => {
