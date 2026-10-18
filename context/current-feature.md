@@ -1,5 +1,7 @@
 # Current Feature
 
+Not Started
+
 ## Status
 
 Not Started
@@ -25,3 +27,15 @@ Not Started
 - Completed sidebar pro badge: reusable `ProBadge` pill shown on File and Image types in the sidebar, hidden when collapsed
 - Completed auth core: Better Auth with Prisma adapter, `/api/auth/[...all]` handler, `/sign-in` and `/sign-up` pages with Zod validation, toast errors and redirect to `/dashboard`
 - Completed auth sessions: `src/proxy.ts` route protection, session-based current user replacing the demo user, real user in the sidebar with an avatar menu and sign out
+- Completed auth GitHub OAuth: github provider with Zod-validated env vars, reusable `OAuthButton` and `OAuthSection` on sign-in and sign-up, error toast from `?error=`, plus a sign out button in the expanded sidebar
+- Completed mobile sidebar fixes: responsive shell and top bar, mobile account card with sign out at the top of the drawer
+- Completed auth account linking: Better Auth account linking with the default verified-email gate, clear toasts for rejected GitHub sign-ins and existing-email sign-ups
+- Completed auth email verification: Resend-backed verification emails, required verification for email/password sign-in, "Check your email" screen with 60-second resend cooldown, unverified sign-in and invalid link toasts, existing-account notice email
+- Completed auth forgot password: `/forgot-password` and `/reset-password` pages, expiring reset links with sessions revoked on reset, per-user cap on reset emails, GitHub-only notice email, shared resend cooldown hook
+- Completed user profile page: protected `/profile` with account details, usage against free limits, edit name and change password forms, sidebar user row and menu links, plus shared `(workspace)` and `(auth)` route group layouts
+- Completed email verification flag: `EMAIL_VERIFICATION_ENABLED` env flag (default on, rejected as false on Vercel production) driving Better Auth, sign-up goes straight to `/dashboard` when verification is off so browser tests need no email
+- Completed code scan fixes: seed no longer creates a demo user, password reset works while signed in, sidebar and drawer accessibility, server-side name and avatar cleanup, database-backed rate limits (`RateLimit` migration), per-recipient email caps, auth env validation
+- Completed delete account: "Danger zone" on `/profile` with a confirmation modal (type your email, plus password for email and password users), new Base UI `Dialog` component, Better Auth `deleteUser` with cleanup of non-cascading rows and a rate limit on the endpoint
+- Completed Upstash Redis rate limiting: Better Auth limiter and per-recipient email caps on Redis (`customStorage`, atomic increment with expiry, fail open except `/delete-user`), `RateLimit` table dropped by migration, Upstash env validation
+- Completed items phase 1: protected `/items/[type]` lists for every sidebar type with item cards, count pill, empty state, skeletons and `?page=N` pagination (24 per page), plus the specs for items phases 1 to 5
+- Completed items phase 2: item detail drawer opened from `?item=<id>` on item cards and dashboard rows, with a Base UI `Sheet`, server-rendered Shiki code and sanitized Markdown, per-type content, copy button and not-found state

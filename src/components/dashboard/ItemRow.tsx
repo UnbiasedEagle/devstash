@@ -1,5 +1,6 @@
 import { Pin, Star } from "lucide-react";
 import Link from "next/link";
+import TagChip from "@/components/items/TagChip";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { DashboardItem } from "@/types/dashboard";
@@ -71,12 +72,7 @@ export default function ItemRow({ item }: ItemRowProps) {
       </div>
       <ul className="hidden gap-1.5 md:flex">
         {item.tags.map((tag) => (
-          <li
-            key={tag}
-            className="rounded-md border border-border px-2 py-0.5 font-mono text-xs text-muted-foreground"
-          >
-            {tag}
-          </li>
+          <TagChip key={tag} tag={tag} />
         ))}
       </ul>
       <time

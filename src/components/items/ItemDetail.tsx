@@ -1,6 +1,7 @@
 import CodeBlock from "@/components/items/CodeBlock";
 import { CopyButton } from "@/components/items/CopyButton";
 import MarkdownContent from "@/components/items/MarkdownContent";
+import TagChip from "@/components/items/TagChip";
 import { SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 import type { DetailItem } from "@/types/items";
@@ -117,12 +118,7 @@ export default function ItemDetail({ item }: { item: DetailItem }) {
       {item.tags.length > 0 && (
         <ul className="flex flex-wrap gap-1.5">
           {item.tags.map((tag) => (
-            <li
-              key={tag}
-              className="rounded-md border border-border px-2 py-0.5 font-mono text-xs text-muted-foreground"
-            >
-              {tag}
-            </li>
+            <TagChip key={tag} tag={tag} />
           ))}
         </ul>
       )}

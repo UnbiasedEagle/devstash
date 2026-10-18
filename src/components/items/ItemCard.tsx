@@ -1,5 +1,6 @@
 import { Pin, Star } from "lucide-react";
 import Link from "next/link";
+import TagChip from "@/components/items/TagChip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 import { formatRelativeTime } from "@/lib/relative-time";
@@ -121,12 +122,7 @@ export default function ItemCard({ item, now, href }: ItemCardProps) {
       <footer className="mt-auto flex items-center justify-between gap-3 pt-1">
         <ul className="flex min-w-0 flex-wrap gap-1.5">
           {visibleTags.map((tag) => (
-            <li
-              key={tag}
-              className="rounded-md border border-border px-2 py-0.5 font-mono text-xs text-muted-foreground"
-            >
-              {tag}
-            </li>
+            <TagChip key={tag} tag={tag} />
           ))}
           {hiddenTagCount > 0 && (
             <li className="rounded-md px-1 py-0.5 text-xs text-muted-foreground">
