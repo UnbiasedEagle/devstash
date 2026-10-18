@@ -72,6 +72,7 @@ Open [http://localhost:3000](http://localhost:3000) and create an account. A new
 | `BETTER_AUTH_URL` | App URL, `http://localhost:3000` locally |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | GitHub OAuth app. Callback URL: `{BETTER_AUTH_URL}/api/auth/callback/github` |
 | `RESEND_API_KEY`, `EMAIL_FROM` | Resend key and sender. The shared `onboarding@resend.dev` sender only delivers to your own Resend account address |
+| `EMAIL_VERIFICATION_ENABLED` | Optional, defaults to `true`. Set to `false` locally to sign up without email verification, for example in browser tests. The build fails if it is `false` on Vercel production. With it off, signing up with an existing email returns an error instead of the generic response |
 
 All of these are validated at startup, so a missing value fails fast instead of breaking at runtime.
 

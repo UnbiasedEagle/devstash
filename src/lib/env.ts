@@ -10,5 +10,21 @@ const emailEnvSchema = z.object({
   EMAIL_FROM: z.string().min(1),
 });
 
+const flagsEnvSchema = z.object({
+  EMAIL_VERIFICATION_ENABLED: z
+    .enum(["true", "false"])
+    .default("true")
+    .transform((value) => value === "true"),
+});
+
 export const githubEnv = githubEnvSchema.parse(process.env);
+export const flagsEnv = flagsEnvSchema.parse(process.env);
+
+// Fails the deploy instead of silently shipping unverified sign-ups. VERCEL_ENV, not NODE_ENV, because previews also run with NODE_ENV=production
+if (
+  process.env.VERCEL_ENV === "production" &&
+  !flagsEnv.EMAIL_VERIFICATION_ENABLED
+) {
+  throw new Error("EMAIL_VERIFICATION_ENABLED cannot be false in production");
+}
 export const emailEnv = emailEnvSchema.parse(process.env);

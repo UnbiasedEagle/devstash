@@ -9,7 +9,7 @@ import {
   resetPasswordEmail,
   verificationEmail,
 } from "@/lib/email-templates";
-import { githubEnv } from "@/lib/env";
+import { flagsEnv, githubEnv } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
@@ -22,7 +22,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
-    requireEmailVerification: true,
+    requireEmailVerification: flagsEnv.EMAIL_VERIFICATION_ENABLED,
     resetPasswordTokenExpiresIn: 3600,
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }) => {
@@ -71,8 +71,8 @@ export const auth = betterAuth({
     },
   },
   emailVerification: {
-    sendOnSignUp: true,
-    sendOnSignIn: true,
+    sendOnSignUp: flagsEnv.EMAIL_VERIFICATION_ENABLED,
+    sendOnSignIn: flagsEnv.EMAIL_VERIFICATION_ENABLED,
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
       // Better Auth appends link errors to the callback URL, so it must be a page that shows them

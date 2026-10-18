@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -14,6 +15,7 @@ import { useResendVerification } from "@/lib/use-resend-verification";
 import type { FieldErrors } from "@/types/auth";
 
 export function SignUpForm() {
+  const router = useRouter();
   const [errors, setErrors] = useState<FieldErrors>({});
   const [pending, setPending] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -33,13 +35,19 @@ export function SignUpForm() {
     setPending(true);
     const { name, email, password } = parsed.data;
     try {
-      const { error } = await authClient.signUp.email({
+      const { data, error } = await authClient.signUp.email({
         name,
         email,
         password,
       });
       if (error) {
         toast.error(error.message ?? "Could not create your account");
+        return;
+      }
+      // A session token only comes back when no email verification is required
+      if (data?.token) {
+        router.push("/dashboard");
+        router.refresh();
         return;
       }
       setSentTo(email);
