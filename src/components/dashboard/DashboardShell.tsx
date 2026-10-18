@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { PanelLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,14 +18,17 @@ export default function DashboardShell({
   children,
 }: DashboardShellProps) {
   const [desktopOpen, setDesktopOpen] = useState(true);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+  // Remembering the path the drawer opened on closes it on navigation without an effect
+  const [mobileOpenPath, setMobileOpenPath] = useState<string | null>(null);
+  const mobileOpen = mobileOpenPath === pathname;
 
   return (
     <div className="flex h-dvh">
       {mobileOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/50 md:hidden"
-          onClick={() => setMobileOpen(false)}
+          onClick={() => setMobileOpenPath(null)}
         />
       )}
       <aside
@@ -45,7 +49,7 @@ export default function DashboardShell({
               size="icon"
               className="md:hidden"
               aria-label="Open sidebar"
-              onClick={() => setMobileOpen((open) => !open)}
+              onClick={() => setMobileOpenPath(mobileOpen ? null : pathname)}
             >
               <PanelLeft />
             </Button>

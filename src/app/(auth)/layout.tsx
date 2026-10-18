@@ -1,15 +1,12 @@
 import { Suspense } from "react";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { SignedInRedirect } from "@/components/auth/SignedInRedirect";
-import { SignUpForm } from "@/components/auth/SignUpForm";
 
-export default function SignUpPage() {
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthShell>
       <Suspense>
-        <SignedInRedirect>
-          <SignUpForm />
-        </SignedInRedirect>
+        <SignedInRedirect>{children}</SignedInRedirect>
       </Suspense>
     </AuthShell>
   );
