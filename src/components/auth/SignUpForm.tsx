@@ -12,6 +12,11 @@ import { authClient } from "@/lib/auth-client";
 import { signUpSchema } from "@/lib/auth-schemas";
 import type { FieldErrors } from "@/types/auth";
 
+const EXISTING_ACCOUNT_CODES = [
+  "USER_ALREADY_EXISTS",
+  "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL",
+];
+
 export function SignUpForm() {
   const router = useRouter();
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -36,7 +41,11 @@ export function SignUpForm() {
         password,
       });
       if (error) {
-        toast.error(error.message ?? "Could not create your account");
+        toast.error(
+          error.code && EXISTING_ACCOUNT_CODES.includes(error.code)
+            ? "An account with this email already exists. Sign in instead, or use Continue with GitHub."
+            : (error.message ?? "Could not create your account"),
+        );
         return;
       }
       router.push("/dashboard");

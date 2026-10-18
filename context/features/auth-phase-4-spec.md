@@ -6,7 +6,7 @@ Make sure one email maps to one user across the email/password and GitHub provid
 
 ## Requirements
 
-- Enable Better Auth account linking (`account.accountLinking`) with `github` as a trusted provider, so signing in with GitHub using the same verified email attaches to the existing user instead of creating a duplicate or failing
+- Enable Better Auth account linking (`account.accountLinking`) without `trustedProviders`, so signing in with GitHub links only when GitHub reports the email as verified and the existing user's email is verified, instead of creating a duplicate or failing
 - Show a clear toast when a sign-in is rejected because the email belongs to an email/password account that cannot be linked
 - Verify in the browser (new GitHub user, returning GitHub user, same email via email/password and GitHub resolves to one user with two `Account` rows), then run `npm run build`
 
