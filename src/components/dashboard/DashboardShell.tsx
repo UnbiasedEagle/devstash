@@ -1,6 +1,5 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { PanelLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,15 +17,12 @@ export default function DashboardShell({
   children,
 }: DashboardShellProps) {
   const [desktopOpen, setDesktopOpen] = useState(true);
-  const pathname = usePathname();
-  // Remembering the path the drawer opened on closes it on navigation without an effect
-  const [mobileOpenPath, setMobileOpenPath] = useState<string | null>(null);
-  const mobileOpen = mobileOpenPath === pathname;
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     if (!mobileOpen) return;
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setMobileOpenPath(null);
+      if (event.key === "Escape") setMobileOpen(false);
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -38,11 +34,20 @@ export default function DashboardShell({
         <div
           aria-hidden
           className="fixed inset-0 z-30 bg-black/50 md:hidden"
-          onClick={() => setMobileOpenPath(null)}
+          onClick={() => setMobileOpen(false)}
         />
       )}
       <aside
         data-collapsed={!desktopOpen}
+        // Closes the drawer when an internal link inside it is followed, without needing the current pathname
+        onClick={(event) => {
+          if (
+            event.target instanceof Element &&
+            event.target.closest('a[href^="/"]:not([target])')
+          ) {
+            setMobileOpen(false);
+          }
+        }}
         className={cn(
           "group/sidebar fixed inset-y-0 left-0 z-40 h-dvh w-64 shrink-0 overflow-hidden border-r border-border bg-background transition-[transform,visibility] md:static md:h-auto md:translate-x-0 md:transition-[width]",
           mobileOpen ? "translate-x-0" : "-translate-x-full max-md:invisible",
@@ -59,7 +64,7 @@ export default function DashboardShell({
               size="icon"
               className="md:hidden"
               aria-label="Open sidebar"
-              onClick={() => setMobileOpenPath(mobileOpen ? null : pathname)}
+              onClick={() => setMobileOpen((open) => !open)}
             >
               <PanelLeft />
             </Button>
