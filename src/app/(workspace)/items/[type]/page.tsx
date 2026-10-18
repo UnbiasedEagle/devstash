@@ -4,7 +4,10 @@ import { connection } from "next/server";
 import { z } from "zod";
 import ItemCard, { ItemCardSkeleton } from "@/components/items/ItemCard";
 import ItemDetail, { ItemNotFound } from "@/components/items/ItemDetail";
-import { ItemDrawer } from "@/components/items/ItemDrawer";
+import {
+  ItemDrawerPending,
+  ItemDrawerProvider,
+} from "@/components/items/ItemDrawer";
 import Pagination from "@/components/items/Pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getItemTypeBySlug } from "@/lib/db/item-types";
@@ -13,6 +16,7 @@ import { getCurrentUserId } from "@/lib/db/user";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 import { parsePage } from "@/lib/pagination";
 import { getRequestTime } from "@/lib/relative-time";
+import type { DetailItem } from "@/types/items";
 
 const SLUG_PATTERN = /^[a-z0-9-]{1,30}$/i;
 const itemIdSchema = z.string().min(1).max(64);
@@ -50,6 +54,14 @@ async function ItemsContent({
   const type = await getItemTypeBySlug(userId, slug);
   if (!type) notFound();
 
+  const openItemId = itemIdSchema.safeParse(
+    Array.isArray(itemParam) ? itemParam[0] : itemParam,
+  ).data;
+  // Started before the list resolves so the drawer does not wait for the list queries
+  const openItemPromise = openItemId
+    ? getItemById(userId, type.id, openItemId)
+    : null;
+
   const { items, total, page, totalPages } = await getItemsByType(
     userId,
     type.id,
@@ -61,86 +73,69 @@ async function ItemsContent({
   const basePath = `/items/${type.name.toLowerCase()}`;
   const pagePrefix = page > 1 ? `page=${page}&` : "";
   const closeHref = page > 1 ? `${basePath}?page=${page}` : basePath;
-  const openItemId = itemIdSchema.safeParse(
-    Array.isArray(itemParam) ? itemParam[0] : itemParam,
-  ).data;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <div className="flex items-center gap-3">
-        <span
-          className="flex size-10 shrink-0 items-center justify-center rounded-lg"
-          style={{ backgroundColor: `${type.color}1f` }}
-        >
-          {Icon && <Icon className="size-5" style={{ color: type.color }} />}
-        </span>
-        <h1 className="text-2xl font-semibold tracking-tight">{plural}</h1>
-        <span className="rounded-full border border-border bg-muted/50 px-2.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
-          {total} {total === 1 ? "item" : "items"}
-        </span>
+    <ItemDrawerProvider
+      openItemId={openItemId}
+      closeHref={closeHref}
+      drawer={
+        openItemPromise && (
+          <Suspense fallback={<ItemDrawerPending />}>
+            <OpenItemContent itemPromise={openItemPromise} />
+          </Suspense>
+        )
+      }
+    >
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div className="flex items-center gap-3">
+          <span
+            className="flex size-10 shrink-0 items-center justify-center rounded-lg"
+            style={{ backgroundColor: `${type.color}1f` }}
+          >
+            {Icon && <Icon className="size-5" style={{ color: type.color }} />}
+          </span>
+          <h1 className="text-2xl font-semibold tracking-tight">{plural}</h1>
+          <span className="rounded-full border border-border bg-muted/50 px-2.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
+            {total} {total === 1 ? "item" : "items"}
+          </span>
+        </div>
+
+        {total === 0 ? (
+          <p className="rounded-xl border border-dashed border-border px-4 py-12 text-center text-sm text-muted-foreground">
+            No {type.name === "URL" ? plural : plural.toLowerCase()} yet
+          </p>
+        ) : (
+          <>
+            <div className={gridClass}>
+              {items.map((item) => (
+                <ItemCard
+                  key={item.id}
+                  item={item}
+                  now={now}
+                  href={`${basePath}?${pagePrefix}item=${item.id}`}
+                />
+              ))}
+            </div>
+            <Pagination
+              basePath={basePath}
+              page={page}
+              totalPages={totalPages}
+              total={total}
+            />
+          </>
+        )}
       </div>
-
-      {total === 0 ? (
-        <p className="rounded-xl border border-dashed border-border px-4 py-12 text-center text-sm text-muted-foreground">
-          No {type.name === "URL" ? plural : plural.toLowerCase()} yet
-        </p>
-      ) : (
-        <>
-          <div className={gridClass}>
-            {items.map((item) => (
-              <ItemCard
-                key={item.id}
-                item={item}
-                now={now}
-                href={`${basePath}?${pagePrefix}item=${item.id}`}
-              />
-            ))}
-          </div>
-          <Pagination
-            basePath={basePath}
-            page={page}
-            totalPages={totalPages}
-            total={total}
-          />
-        </>
-      )}
-
-      {openItemId && (
-        <Suspense fallback={null}>
-          <OpenItemDrawer
-            userId={userId}
-            itemTypeId={type.id}
-            itemId={openItemId}
-            closeHref={closeHref}
-          />
-        </Suspense>
-      )}
-    </div>
+    </ItemDrawerProvider>
   );
 }
 
-async function OpenItemDrawer({
-  userId,
-  itemTypeId,
-  itemId,
-  closeHref,
+async function OpenItemContent({
+  itemPromise,
 }: {
-  userId: string;
-  itemTypeId: string;
-  itemId: string;
-  closeHref: string;
+  itemPromise: Promise<DetailItem | null>;
 }) {
-  const item = await getItemById(userId, itemTypeId, itemId);
-
-  return (
-    <ItemDrawer
-      key={itemId}
-      closeHref={closeHref}
-      returnFocusId={`item-${itemId}`}
-    >
-      {item ? <ItemDetail item={item} /> : <ItemNotFound />}
-    </ItemDrawer>
-  );
+  const item = await itemPromise;
+  return item ? <ItemDetail item={item} /> : <ItemNotFound />;
 }
 
 export default function ItemsPage({

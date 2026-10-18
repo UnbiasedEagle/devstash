@@ -1,5 +1,5 @@
 import { Pin, Star } from "lucide-react";
-import Link from "next/link";
+import ItemLink from "@/components/items/ItemLink";
 import TagChip from "@/components/items/TagChip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
@@ -85,15 +85,22 @@ export default function ItemCard({ item, now, href }: ItemCardProps) {
           {Icon && <Icon className="size-4" style={{ color: type.color }} />}
         </span>
         <h2 className="min-w-0 flex-1 truncate font-mono text-sm font-medium">
-          <Link
+          <ItemLink
             id={`item-${item.id}`}
+            preview={{
+              id: item.id,
+              title: item.title,
+              description: item.description,
+              tags: item.tags,
+              itemType: item.itemType,
+            }}
             href={href}
             scroll={false}
             className="outline-none after:absolute after:inset-0"
           >
             <span className="sr-only">{type.name}: </span>
             {item.title}
-          </Link>
+          </ItemLink>
         </h2>
         {item.isPinned && (
           <Pin

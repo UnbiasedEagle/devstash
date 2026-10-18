@@ -1,9 +1,8 @@
 import CodeBlock from "@/components/items/CodeBlock";
 import { CopyButton } from "@/components/items/CopyButton";
 import MarkdownContent from "@/components/items/MarkdownContent";
-import TagChip from "@/components/items/TagChip";
+import ItemDrawerHeader from "@/components/items/ItemDrawerHeader";
 import { SheetDescription, SheetTitle } from "@/components/ui/sheet";
-import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 import type { DetailItem } from "@/types/items";
 
 const CODE_TYPES = ["Snippet", "Command"];
@@ -92,36 +91,16 @@ export function ItemNotFound() {
 }
 
 export default function ItemDetail({ item }: { item: DetailItem }) {
-  const type = item.itemType;
-  const Icon = ITEM_TYPE_ICONS[type.icon];
   const copyText = getCopyText(item);
 
   return (
     <div className="flex flex-col gap-5 p-6">
-      <header className="flex flex-col gap-3 pr-10">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span
-            aria-hidden
-            className="flex size-7 items-center justify-center rounded-md"
-            style={{ backgroundColor: `${type.color}1f` }}
-          >
-            {Icon && <Icon className="size-4" style={{ color: type.color }} />}
-          </span>
-          {type.name}
-        </div>
-        <SheetTitle className="font-mono">{item.title}</SheetTitle>
-        {item.description && (
-          <SheetDescription>{item.description}</SheetDescription>
-        )}
-      </header>
-
-      {item.tags.length > 0 && (
-        <ul className="flex flex-wrap gap-1.5">
-          {item.tags.map((tag) => (
-            <TagChip key={tag} tag={tag} />
-          ))}
-        </ul>
-      )}
+      <ItemDrawerHeader
+        title={item.title}
+        description={item.description}
+        tags={item.tags}
+        itemType={item.itemType}
+      />
 
       {copyText && (
         <div>

@@ -7,6 +7,11 @@ export interface ListItem extends DashboardItem {
   contentPreview: string | null;
 }
 
+export type DrawerPreview = Pick<
+  ListItem,
+  "id" | "title" | "description" | "tags" | "itemType"
+>;
+
 export interface ItemPage {
   items: ListItem[];
   total: number;
