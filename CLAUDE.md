@@ -17,7 +17,8 @@ Read the following files to get the full context of the project:
 - `npm run build` / `npm start` — production build and serve
 - `npm run lint` — ESLint (flat config in `eslint.config.mjs`)
 - `npx tsc --noEmit` — typecheck
-- No test runner is configured.
+- `npm test` — Vitest unit tests (`npm run test:watch` while developing). Tests live next to the code as `*.test.ts(x)` and mock Prisma, Redis and auth, so they never touch a real service
+- Browser checks (layout, drawers, real flows, mobile) run through Playwright with `/feature test`
 
 ## Neon MCP
 

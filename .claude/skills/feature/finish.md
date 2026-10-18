@@ -3,7 +3,7 @@
 Never run this unless the build passes and the user has tested the feature.
 
 0. Stop unless you're on a `feature/*` or `fix/*` branch and the status is `In Progress`.
-1. Run `npm run lint`, `npx tsc --noEmit` and `npm run build`. Stop on failure.
+1. Run `npm run lint`, `npx tsc --noEmit`, `npm test` and `npm run build`. Stop on failure.
 2. If the Prisma schema changed, run `npx prisma migrate status` and stop if out of sync.
 3. Ask the user to confirm before committing.
 4. Commit everything as a single conventional-commit commit (short subject, no body). Never mention Claude or add a Co-Authored-By trailer. Don't stage `context/current-feature.md` unless it only carries the previous feature's reset.
