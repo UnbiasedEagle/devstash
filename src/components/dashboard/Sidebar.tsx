@@ -3,6 +3,9 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Folder, Layers, Star } from "lucide-react";
 import CollapsibleSection from "@/components/dashboard/CollapsibleSection";
+import MobileAccountCard, {
+  MobileAccountCardSkeleton,
+} from "@/components/dashboard/MobileAccountCard";
 import ProBadge from "@/components/dashboard/ProBadge";
 import SignOutButton from "@/components/dashboard/SignOutButton";
 import UserMenu from "@/components/dashboard/UserMenu";
@@ -12,6 +15,7 @@ import { getSidebarCollections } from "@/lib/db/collections";
 import { getItemTypeCounts } from "@/lib/db/item-types";
 import { getCurrentUser } from "@/lib/db/user";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
+import { getInitials } from "@/lib/user-initials";
 
 const FAVORITE_COLLECTION_LIMIT = 10;
 const RECENT_COLLECTION_LIMIT = 4;
@@ -172,7 +176,7 @@ async function SidebarNav() {
 
 function UserAreaShell({ children }: { children?: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-3 border-t border-border px-2.5 py-4">
+    <div className="flex items-center gap-3 border-t border-border px-2.5 py-4 max-md:hidden">
       {children}
     </div>
   );
@@ -181,13 +185,6 @@ function UserAreaShell({ children }: { children?: React.ReactNode }) {
 async function SidebarUser() {
   await connection();
   const user = await getCurrentUser();
-  const initials = user.name
-    .split(" ")
-    .filter(Boolean)
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 
   return (
     <UserAreaShell>
@@ -195,7 +192,7 @@ async function SidebarUser() {
         <Avatar className="size-9">
           {user.image && <AvatarImage src={user.image} alt={user.name} />}
           <AvatarFallback className="font-medium text-foreground">
-            {initials}
+            {getInitials(user.name)}
           </AvatarFallback>
         </Avatar>
       </UserMenu>
@@ -204,7 +201,7 @@ async function SidebarUser() {
         <p className="truncate text-xs text-muted-foreground">{user.email}</p>
       </div>
       <SignOutButton
-        className={`shrink-0 text-muted-foreground ${COLLAPSED_HIDDEN}`}
+        className={`shrink-0 text-muted-foreground max-md:hidden ${COLLAPSED_HIDDEN}`}
       />
     </UserAreaShell>
   );
@@ -222,6 +219,9 @@ export default function Sidebar() {
         </span>
       </div>
 
+      <Suspense fallback={<MobileAccountCardSkeleton />}>
+        <MobileAccountCard />
+      </Suspense>
       <Suspense fallback={<SidebarNavSkeleton />}>
         <SidebarNav />
       </Suspense>

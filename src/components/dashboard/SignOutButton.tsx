@@ -4,14 +4,22 @@ import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSignOut } from "@/lib/use-sign-out";
 
-export default function SignOutButton({ className }: { className?: string }) {
+interface SignOutButtonProps {
+  showLabel?: boolean;
+  className?: string;
+}
+
+export default function SignOutButton({
+  showLabel = false,
+  className,
+}: SignOutButtonProps) {
   const { signOut, isPending } = useSignOut();
 
   return (
     <Button
       type="button"
       variant="ghost"
-      size="icon"
+      size={showLabel ? "default" : "icon"}
       aria-label="Sign out"
       title="Sign out"
       className={className}
@@ -19,6 +27,7 @@ export default function SignOutButton({ className }: { className?: string }) {
       onClick={signOut}
     >
       <LogOut />
+      {showLabel && (isPending ? "Signing out..." : "Sign out")}
     </Button>
   );
 }
