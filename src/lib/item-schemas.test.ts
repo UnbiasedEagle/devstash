@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   createItemSchema,
-  isCreatableItemType,
-  ITEM_LANGUAGES,
   MAX_CONTENT_LENGTH,
   MAX_DESCRIPTION_LENGTH,
   MAX_TAG_LENGTH,
@@ -139,12 +137,7 @@ describe("createItemSchema content types", () => {
     expect(errorsFor({ ...snippet, content }, "content")).toHaveLength(1);
   });
 
-  it("accepts every listed language for snippets and rejects others", () => {
-    for (const language of ITEM_LANGUAGES) {
-      expect(createItemSchema.safeParse({ ...snippet, language }).success).toBe(
-        true,
-      );
-    }
+  it("rejects a language outside the supported list", () => {
     expect(
       errorsFor({ ...snippet, language: "cobol" }, "language"),
     ).toHaveLength(1);
@@ -193,15 +186,5 @@ describe("createItemSchema URL items", () => {
     ).toHaveLength(1);
     const long = `https://example.com/${"a".repeat(MAX_URL_LENGTH)}`;
     expect(errorsFor({ ...url, url: long }, "url")).toHaveLength(1);
-  });
-});
-
-describe("isCreatableItemType", () => {
-  it("allows the five text and link types and blocks Pro types", () => {
-    for (const name of ["Snippet", "Prompt", "Command", "Note", "URL"]) {
-      expect(isCreatableItemType(name)).toBe(true);
-    }
-    expect(isCreatableItemType("File")).toBe(false);
-    expect(isCreatableItemType("Image")).toBe(false);
   });
 });

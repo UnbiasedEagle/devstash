@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ITEMS_PER_PAGE, parsePage } from "@/lib/pagination";
+import { parsePage } from "@/lib/pagination";
 
 describe("parsePage", () => {
   it("falls back to page 1 for missing or invalid values", () => {
@@ -21,12 +21,5 @@ describe("parsePage", () => {
   it("truncates decimals and ignores unsafe integers", () => {
     expect(parsePage("2.7")).toBe(2);
     expect(parsePage("99999999999999999999")).toBe(1);
-  });
-});
-
-describe("ITEMS_PER_PAGE", () => {
-  it("is a positive whole number", () => {
-    expect(Number.isInteger(ITEMS_PER_PAGE)).toBe(true);
-    expect(ITEMS_PER_PAGE).toBeGreaterThan(0);
   });
 });

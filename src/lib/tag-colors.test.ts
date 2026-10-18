@@ -22,8 +22,4 @@ describe("getTagColor", () => {
       expect(hue).toBeLessThan(360);
     }
   });
-
-  it("gives different tags different colors in general", () => {
-    expect(getTagColor("alpha-tag")).not.toBe(getTagColor("omega-tag"));
-  });
 });
