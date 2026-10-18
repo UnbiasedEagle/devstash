@@ -1,17 +1,21 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
+import { z } from "zod";
 import ItemCard, { ItemCardSkeleton } from "@/components/items/ItemCard";
+import ItemDetail, { ItemNotFound } from "@/components/items/ItemDetail";
+import { ItemDrawer } from "@/components/items/ItemDrawer";
 import Pagination from "@/components/items/Pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getItemTypeBySlug } from "@/lib/db/item-types";
-import { getItemsByType } from "@/lib/db/items";
+import { getItemById, getItemsByType } from "@/lib/db/items";
 import { getCurrentUserId } from "@/lib/db/user";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 import { parsePage } from "@/lib/pagination";
 import { getRequestTime } from "@/lib/relative-time";
 
 const SLUG_PATTERN = /^[a-z0-9-]{1,30}$/i;
+const itemIdSchema = z.string().min(1).max(64);
 const SKELETON_CARD_COUNT = 6;
 
 const gridClass = "grid gap-4 md:grid-cols-2 xl:grid-cols-3";
@@ -39,7 +43,7 @@ async function ItemsContent({
 }: Pick<PageProps<"/items/[type]">, "params" | "searchParams">) {
   await connection();
   const { type: slug } = await params;
-  const { page: pageParam } = await searchParams;
+  const { page: pageParam, item: itemParam } = await searchParams;
   if (!SLUG_PATTERN.test(slug)) notFound();
 
   const userId = await getCurrentUserId();
@@ -54,6 +58,12 @@ async function ItemsContent({
   const Icon = ITEM_TYPE_ICONS[type.icon];
   const now = getRequestTime();
   const plural = `${type.name}s`;
+  const basePath = `/items/${type.name.toLowerCase()}`;
+  const pagePrefix = page > 1 ? `page=${page}&` : "";
+  const closeHref = page > 1 ? `${basePath}?page=${page}` : basePath;
+  const openItemId = itemIdSchema.safeParse(
+    Array.isArray(itemParam) ? itemParam[0] : itemParam,
+  ).data;
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -78,18 +88,58 @@ async function ItemsContent({
         <>
           <div className={gridClass}>
             {items.map((item) => (
-              <ItemCard key={item.id} item={item} now={now} />
+              <ItemCard
+                key={item.id}
+                item={item}
+                now={now}
+                href={`${basePath}?${pagePrefix}item=${item.id}`}
+              />
             ))}
           </div>
           <Pagination
-            basePath={`/items/${type.name.toLowerCase()}`}
+            basePath={basePath}
             page={page}
             totalPages={totalPages}
             total={total}
           />
         </>
       )}
+
+      {openItemId && (
+        <Suspense fallback={null}>
+          <OpenItemDrawer
+            userId={userId}
+            itemTypeId={type.id}
+            itemId={openItemId}
+            closeHref={closeHref}
+          />
+        </Suspense>
+      )}
     </div>
+  );
+}
+
+async function OpenItemDrawer({
+  userId,
+  itemTypeId,
+  itemId,
+  closeHref,
+}: {
+  userId: string;
+  itemTypeId: string;
+  itemId: string;
+  closeHref: string;
+}) {
+  const item = await getItemById(userId, itemTypeId, itemId);
+
+  return (
+    <ItemDrawer
+      key={itemId}
+      closeHref={closeHref}
+      returnFocusId={`item-${itemId}`}
+    >
+      {item ? <ItemDetail item={item} /> : <ItemNotFound />}
+    </ItemDrawer>
   );
 }
 

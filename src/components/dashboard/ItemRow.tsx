@@ -1,4 +1,5 @@
 import { Pin, Star } from "lucide-react";
+import Link from "next/link";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { DashboardItem } from "@/types/dashboard";
@@ -31,7 +32,7 @@ export default function ItemRow({ item }: ItemRowProps) {
   const Icon = ITEM_TYPE_ICONS[type.icon];
 
   return (
-    <li className="flex items-center gap-4 px-4 py-3 transition-colors hover:bg-accent/60">
+    <li className="relative flex items-center gap-4 px-4 py-3 transition-colors hover:bg-accent/60 has-[a:focus-visible]:bg-accent/60">
       <span
         title={type.name}
         className="flex size-9 shrink-0 items-center justify-center rounded-md"
@@ -42,7 +43,12 @@ export default function ItemRow({ item }: ItemRowProps) {
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <h3 className="truncate font-mono text-sm font-medium">
-            {item.title}
+            <Link
+              href={`/items/${type.name.toLowerCase()}?item=${item.id}`}
+              className="outline-none after:absolute after:inset-0"
+            >
+              {item.title}
+            </Link>
           </h3>
           {item.isPinned && (
             <Pin

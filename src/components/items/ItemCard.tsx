@@ -1,4 +1,5 @@
 import { Pin, Star } from "lucide-react";
+import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 import { formatRelativeTime } from "@/lib/relative-time";
@@ -7,6 +8,7 @@ import type { ListItem } from "@/types/items";
 interface ItemCardProps {
   item: ListItem;
   now: number;
+  href: string;
 }
 
 const VISIBLE_TAG_COUNT = 3;
@@ -65,14 +67,14 @@ export function ItemCardSkeleton() {
   );
 }
 
-export default function ItemCard({ item, now }: ItemCardProps) {
+export default function ItemCard({ item, now, href }: ItemCardProps) {
   const type = item.itemType;
   const Icon = ITEM_TYPE_ICONS[type.icon];
   const visibleTags = item.tags.slice(0, VISIBLE_TAG_COUNT);
   const hiddenTagCount = item.tags.length - visibleTags.length;
 
   return (
-    <article className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
+    <article className="relative flex flex-col gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:bg-accent/40 has-[a:focus-visible]:ring-3 has-[a:focus-visible]:ring-ring/50">
       <header className="flex items-center gap-3">
         <span
           aria-hidden
@@ -82,8 +84,15 @@ export default function ItemCard({ item, now }: ItemCardProps) {
           {Icon && <Icon className="size-4" style={{ color: type.color }} />}
         </span>
         <h2 className="min-w-0 flex-1 truncate font-mono text-sm font-medium">
-          <span className="sr-only">{type.name}: </span>
-          {item.title}
+          <Link
+            id={`item-${item.id}`}
+            href={href}
+            scroll={false}
+            className="outline-none after:absolute after:inset-0"
+          >
+            <span className="sr-only">{type.name}: </span>
+            {item.title}
+          </Link>
         </h2>
         {item.isPinned && (
           <Pin

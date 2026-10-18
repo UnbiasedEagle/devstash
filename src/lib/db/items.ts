@@ -4,7 +4,7 @@ import { itemTypeSummarySelect } from "@/lib/db/item-types";
 import { ITEMS_PER_PAGE } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 import type { DashboardItem } from "@/types/dashboard";
-import type { ItemPage } from "@/types/items";
+import type { DetailItem, ItemPage } from "@/types/items";
 
 const dashboardItemSelect = {
   id: true,
@@ -30,6 +30,37 @@ const listItemSelect = {
 
 function toDashboardItem({ tags, ...item }: ItemRecord): DashboardItem {
   return { ...item, tags: tags.map(({ tag }) => tag.name) };
+}
+
+const detailItemSelect = {
+  id: true,
+  title: true,
+  description: true,
+  contentType: true,
+  content: true,
+  url: true,
+  fileName: true,
+  fileSize: true,
+  language: true,
+  createdAt: true,
+  updatedAt: true,
+  itemType: { select: itemTypeSummarySelect },
+  tags: { select: { tag: { select: { name: true } } } },
+} satisfies Prisma.ItemSelect;
+
+export async function getItemById(
+  userId: string,
+  itemTypeId: string,
+  id: string,
+): Promise<DetailItem | null> {
+  const item = await prisma.item.findFirst({
+    where: { id, userId, itemTypeId },
+    select: detailItemSelect,
+  });
+  if (!item) return null;
+
+  const { tags, ...rest } = item;
+  return { ...rest, tags: tags.map(({ tag }) => tag.name) };
 }
 
 export async function getItemsByType(
