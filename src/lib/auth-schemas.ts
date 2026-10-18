@@ -13,6 +13,32 @@ export const signInSchema = z.object({
 
 export const forgotPasswordSchema = z.object({ email });
 
+export const updateNameSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Enter your name")
+    .max(80, "Name must be at most 80 characters"),
+});
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z
+      .string()
+      .min(1, "Enter your current password")
+      .max(128, "Password must be at most 128 characters"),
+    newPassword,
+    confirmPassword: z.string(),
+  })
+  .refine((values) => values.newPassword === values.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Passwords do not match",
+  })
+  .refine((values) => values.newPassword !== values.currentPassword, {
+    path: ["newPassword"],
+    message: "Choose a password you haven't used",
+  });
+
 export const resetPasswordSchema = z
   .object({
     password: newPassword,

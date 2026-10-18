@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { connection } from "next/server";
-import { Folder, Layers, Star } from "lucide-react";
+import { ChevronRight, Folder, Layers, Star } from "lucide-react";
 import CollapsibleSection from "@/components/dashboard/CollapsibleSection";
 import MobileAccountCard, {
   MobileAccountCardSkeleton,
@@ -186,19 +186,33 @@ async function SidebarUser() {
   await connection();
   const user = await getCurrentUser();
 
+  const avatar = (
+    <Avatar className="size-9">
+      {user.image && <AvatarImage src={user.image} alt={user.name} />}
+      <AvatarFallback className="font-medium text-foreground">
+        {getInitials(user.name)}
+      </AvatarFallback>
+    </Avatar>
+  );
+
   return (
     <UserAreaShell>
-      <UserMenu name={user.name} email={user.email}>
-        <Avatar className="size-9">
-          {user.image && <AvatarImage src={user.image} alt={user.name} />}
-          <AvatarFallback className="font-medium text-foreground">
-            {getInitials(user.name)}
-          </AvatarFallback>
-        </Avatar>
-      </UserMenu>
-      <div className={`min-w-0 flex-1 ${COLLAPSED_HIDDEN}`}>
-        <p className="truncate text-sm font-medium">{user.name}</p>
-        <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+      <Link
+        href="/profile"
+        title="View your profile"
+        className={`group/profile -ml-1.5 flex min-w-0 flex-1 items-center gap-3 rounded-lg p-1.5 outline-none transition-colors hover:bg-accent focus-visible:ring-3 focus-visible:ring-ring/50 ${COLLAPSED_HIDDEN}`}
+      >
+        {avatar}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium">{user.name}</p>
+          <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+        </div>
+        <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover/profile:translate-x-0.5" />
+      </Link>
+      <div className="hidden md:group-data-[collapsed=true]/sidebar:block">
+        <UserMenu name={user.name} email={user.email}>
+          {avatar}
+        </UserMenu>
       </div>
       <SignOutButton
         className={`shrink-0 text-muted-foreground max-md:hidden ${COLLAPSED_HIDDEN}`}
@@ -210,14 +224,18 @@ async function SidebarUser() {
 export default function Sidebar() {
   return (
     <div className="flex h-full w-64 flex-col">
-      <div className="flex h-16 items-center gap-2 px-3">
+      <Link
+        href="/dashboard"
+        aria-label="DevStash dashboard"
+        className="flex h-16 items-center gap-2 px-3"
+      >
         <div className="flex size-8 items-center justify-center rounded-lg bg-linear-to-br from-indigo-500 to-purple-500 text-white">
           <Layers className="size-5" />
         </div>
         <span className={`text-lg font-semibold ${COLLAPSED_INVISIBLE}`}>
           DevStash
         </span>
-      </div>
+      </Link>
 
       <Suspense fallback={<MobileAccountCardSkeleton />}>
         <MobileAccountCard />

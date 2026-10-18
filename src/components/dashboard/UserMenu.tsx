@@ -1,6 +1,7 @@
 "use client";
 
-import { LogOut } from "lucide-react";
+import Link from "next/link";
+import { LogOut, User } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,6 +35,10 @@ export default function UserMenu({ name, email, children }: UserMenuProps) {
           <p className="truncate text-xs text-muted-foreground">{email}</p>
         </div>
         <DropdownMenuSeparator />
+        <DropdownMenuItem render={<Link href="/profile" />}>
+          <User />
+          Profile
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={signOut} disabled={isPending}>
           <LogOut />
           Sign out

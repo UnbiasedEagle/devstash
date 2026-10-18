@@ -7,6 +7,7 @@ interface AuthFieldProps {
   label: string;
   type?: "text" | "email" | "password";
   autoComplete?: string;
+  defaultValue?: string;
   error?: string;
 }
 
@@ -15,6 +16,7 @@ export function AuthField({
   label,
   type = "text",
   autoComplete,
+  defaultValue,
   error,
 }: AuthFieldProps) {
   const errorId = `${name}-error`;
@@ -22,6 +24,7 @@ export function AuthField({
     id: name,
     name,
     autoComplete,
+    defaultValue,
     "aria-invalid": error ? true : undefined,
     "aria-describedby": error ? errorId : undefined,
   };

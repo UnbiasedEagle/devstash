@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { connection } from "next/server";
+import { User } from "lucide-react";
 import SignOutButton from "@/components/dashboard/SignOutButton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,7 +25,7 @@ export function MobileAccountCardSkeleton() {
           <Skeleton className="h-3 w-36" />
         </div>
       </div>
-      <div className="h-11 border-t border-border" />
+      <div className="h-22 border-t border-border" />
     </CardShell>
   );
 }
@@ -46,7 +48,14 @@ export default async function MobileAccountCard() {
           <p className="truncate text-xs text-muted-foreground">{user.email}</p>
         </div>
       </div>
-      <div className="border-t border-border">
+      <div className="divide-y divide-border border-t border-border">
+        <Link
+          href="/profile"
+          className="flex h-11 items-center gap-3 px-3 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+        >
+          <User className="size-4" />
+          Profile
+        </Link>
         <SignOutButton
           showLabel
           className="h-11 w-full justify-start gap-3 rounded-none px-3 text-muted-foreground hover:text-destructive"
