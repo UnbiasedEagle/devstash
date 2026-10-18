@@ -6,6 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { AuthField } from "@/components/auth/AuthField";
+import { OAuthSection } from "@/components/auth/OAuthSection";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { signInSchema } from "@/lib/auth-schemas";
@@ -78,6 +79,7 @@ export function SignInForm() {
           {pending ? "Signing in..." : "Sign in"}
         </Button>
       </form>
+      <OAuthSection />
       <p className="text-sm text-muted-foreground">
         New to DevStash?{" "}
         <Link
