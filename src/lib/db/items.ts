@@ -42,6 +42,8 @@ const detailItemSelect = {
   fileName: true,
   fileSize: true,
   language: true,
+  isFavorite: true,
+  isPinned: true,
   createdAt: true,
   updatedAt: true,
   itemType: { select: itemTypeSummarySelect },

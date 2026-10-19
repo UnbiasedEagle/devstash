@@ -7,6 +7,11 @@ export interface ListItem extends DashboardItem {
   contentPreview: string | null;
 }
 
+export interface ItemFlags {
+  isFavorite: boolean;
+  isPinned: boolean;
+}
+
 export type DrawerPreview = Pick<
   ListItem,
   "id" | "title" | "description" | "tags" | "itemType"
@@ -29,6 +34,8 @@ export interface DetailItem {
   fileName: string | null;
   fileSize: number | null;
   language: string | null;
+  isFavorite: boolean;
+  isPinned: boolean;
   createdAt: Date;
   updatedAt: Date;
   itemType: ItemTypeSummary;

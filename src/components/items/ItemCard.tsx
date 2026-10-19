@@ -1,4 +1,4 @@
-import { Pin, Star } from "lucide-react";
+import ItemFlagIcons from "@/components/items/ItemFlagIcons";
 import ItemLink from "@/components/items/ItemLink";
 import TagChip from "@/components/items/TagChip";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -102,20 +102,10 @@ export default function ItemCard({ item, now, href }: ItemCardProps) {
             {item.title}
           </ItemLink>
         </h2>
-        {item.isPinned && (
-          <Pin
-            role="img"
-            aria-label="Pinned"
-            className="size-3.5 shrink-0 text-muted-foreground"
-          />
-        )}
-        {item.isFavorite && (
-          <Star
-            role="img"
-            aria-label="Favorite"
-            className="size-3.5 shrink-0 fill-yellow-500 text-yellow-500"
-          />
-        )}
+        <ItemFlagIcons
+          id={item.id}
+          saved={{ isFavorite: item.isFavorite, isPinned: item.isPinned }}
+        />
       </header>
 
       {item.description && (

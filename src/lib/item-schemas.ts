@@ -29,6 +29,10 @@ export const ITEM_LANGUAGES = [
   "plaintext",
 ] as const;
 
+export function isItemLanguage(name: string) {
+  return (ITEM_LANGUAGES as readonly string[]).includes(name);
+}
+
 export const MAX_TAGS = 10;
 export const MAX_TAG_LENGTH = 30;
 export const MAX_TITLE_LENGTH = 200;

@@ -2,9 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
+import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
-import { createItemSchema } from "@/lib/item-schemas";
+import { createItemSchema, isItemLanguage } from "@/lib/item-schemas";
 import { FREE_ITEM_LIMIT } from "@/lib/plan-limits";
 import { prisma } from "@/lib/prisma";
 import {
@@ -21,6 +22,8 @@ interface CreatedItem {
 class FreeLimitError extends Error {}
 
 const GENERIC_ERROR = "Could not create the item. Try again.";
+const ITEM_NOT_FOUND = "Item not found";
+const itemIdSchema = z.string().min(1).max(64);
 const MAX_TRANSACTION_ATTEMPTS = 3;
 const RETRY_BACKOFF_MS = 50;
 // P2034 is a Serializable write conflict, P2002 is two creates racing to insert the same new tag
@@ -122,4 +125,138 @@ export async function createItem(
     console.error("Failed to create item", error);
     return { success: false, error: GENERIC_ERROR };
   }
+}
+
+// P2025: the item was deleted between the ownership lookup and the write
+function isRecordNotFound(error: unknown) {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2025"
+  );
+}
+
+function revalidateItemViews() {
+  revalidatePath("/dashboard");
+  revalidatePath("/items/[type]", "page");
+}
+
+export async function updateItem(
+  id: string,
+  input: unknown,
+): Promise<ActionResult<{ id: string }>> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) {
+    return { success: false, error: "Sign in again to edit items" };
+  }
+  const userId = session.user.id;
+
+  const parsedId = itemIdSchema.safeParse(id);
+  if (!parsedId.success) return { success: false, error: ITEM_NOT_FOUND };
+  const parsed = createItemSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: "Check the form and try again" };
+  }
+  const { type, title, description, tags } = parsed.data;
+
+  if (!(await consumeMutationQuota(userId))) {
+    return { success: false, error: MUTATION_LIMIT_MESSAGE };
+  }
+
+  try {
+    const existing = await prisma.item.findFirst({
+      where: { id: parsedId.data, userId },
+      select: { language: true, itemType: { select: { name: true } } },
+    });
+    // The type can't change, so a submitted type that differs from the stored one is treated as a bad id
+    if (!existing || existing.itemType.name !== type) {
+      return { success: false, error: ITEM_NOT_FOUND };
+    }
+    const submittedLanguage =
+      "language" in parsed.data ? parsed.data.language : undefined;
+    // The form can only offer the listed languages, so an unlisted one (e.g. from an import) is kept instead of wiped by an unrelated edit
+    const storedLanguage = existing.language;
+    const language =
+      submittedLanguage === undefined &&
+      storedLanguage &&
+      !isItemLanguage(storedLanguage)
+        ? storedLanguage
+        : (submittedLanguage ?? null);
+
+    await withWriteConflictRetry(() =>
+      prisma.item.update({
+        where: { id: parsedId.data, userId },
+        data: {
+          title,
+          description: description || null,
+          content: "content" in parsed.data ? parsed.data.content : null,
+          url: "url" in parsed.data ? parsed.data.url : null,
+          language,
+          tags: {
+            deleteMany: {},
+            create: tags.map((name) => ({
+              tag: {
+                connectOrCreate: {
+                  where: { userId_name: { userId, name } },
+                  create: { name, userId },
+                },
+              },
+            })),
+          },
+        },
+        select: { id: true },
+      }),
+    );
+
+    revalidateItemViews();
+    return { success: true, data: { id: parsedId.data } };
+  } catch (error) {
+    if (isRecordNotFound(error)) {
+      return { success: false, error: ITEM_NOT_FOUND };
+    }
+    console.error("Failed to update item", error);
+    return { success: false, error: "Could not update the item. Try again." };
+  }
+}
+
+async function setItemFlag(
+  id: string,
+  flag: "isFavorite" | "isPinned",
+  value: boolean,
+): Promise<ActionResult<{ id: string }>> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) {
+    return { success: false, error: "Sign in again to edit items" };
+  }
+  const userId = session.user.id;
+
+  const parsedId = itemIdSchema.safeParse(id);
+  if (!parsedId.success || typeof value !== "boolean") {
+    return { success: false, error: ITEM_NOT_FOUND };
+  }
+
+  if (!(await consumeMutationQuota(userId))) {
+    return { success: false, error: MUTATION_LIMIT_MESSAGE };
+  }
+
+  try {
+    const { count } = await prisma.item.updateMany({
+      where: { id: parsedId.data, userId },
+      data: { [flag]: value },
+    });
+    if (count === 0) return { success: false, error: ITEM_NOT_FOUND };
+
+    revalidateItemViews();
+    return { success: true, data: { id: parsedId.data } };
+  } catch (error) {
+    console.error(`Failed to set ${flag}`, error);
+    return { success: false, error: "Could not update the item. Try again." };
+  }
+}
+
+export async function setItemFavorite(id: string, value: boolean) {
+  return setItemFlag(id, "isFavorite", value);
+}
+
+export async function setItemPinned(id: string, value: boolean) {
+  return setItemFlag(id, "isPinned", value);
 }

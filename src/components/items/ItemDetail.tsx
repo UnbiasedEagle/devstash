@@ -1,8 +1,10 @@
 import CodeBlock from "@/components/items/CodeBlock";
 import { CopyButton } from "@/components/items/CopyButton";
 import MarkdownContent from "@/components/items/MarkdownContent";
+import ItemDetailShell from "@/components/items/ItemDetailShell";
 import ItemDrawerHeader from "@/components/items/ItemDrawerHeader";
 import { SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { isCreatableItemType } from "@/lib/item-schemas";
 import type { DetailItem } from "@/types/items";
 
 const CODE_TYPES = ["Snippet", "Command"];
@@ -94,7 +96,11 @@ export default function ItemDetail({ item }: { item: DetailItem }) {
   const copyText = getCopyText(item);
 
   return (
-    <div className="flex flex-col gap-5 p-6">
+    <ItemDetailShell
+      key={item.id}
+      item={item}
+      editable={isCreatableItemType(item.itemType.name)}
+    >
       <ItemDrawerHeader
         title={item.title}
         description={item.description}
@@ -114,6 +120,6 @@ export default function ItemDetail({ item }: { item: DetailItem }) {
         <span>Created {dateFormatter.format(item.createdAt)}</span>
         <span>Updated {dateFormatter.format(item.updatedAt)}</span>
       </footer>
-    </div>
+    </ItemDetailShell>
   );
 }
