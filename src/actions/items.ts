@@ -26,8 +26,8 @@ const ITEM_NOT_FOUND = "Item not found";
 const itemIdSchema = z.string().min(1).max(64);
 const MAX_TRANSACTION_ATTEMPTS = 3;
 const RETRY_BACKOFF_MS = 50;
-// P2034 is a Serializable write conflict, P2002 is two creates racing to insert the same new tag
-const RETRYABLE_CODES = ["P2034", "P2002"];
+// P2034 is a Serializable write conflict, P2002 is two creates racing to insert the same new tag, P2003 is a tag deleted as unused between an edit finding it and linking it
+const RETRYABLE_CODES = ["P2034", "P2002", "P2003"];
 
 // Concurrent writers abort or collide on one another, so these are retried instead of reported
 async function withWriteConflictRetry<T>(run: () => Promise<T>): Promise<T> {
@@ -138,6 +138,7 @@ function isRecordNotFound(error: unknown) {
 function revalidateItemViews() {
   revalidatePath("/dashboard");
   revalidatePath("/items/[type]", "page");
+  revalidatePath("/profile");
 }
 
 export async function updateItem(
@@ -250,6 +251,58 @@ async function setItemFlag(
   } catch (error) {
     console.error(`Failed to set ${flag}`, error);
     return { success: false, error: "Could not update the item. Try again." };
+  }
+}
+
+export async function deleteItem(
+  id: string,
+): Promise<ActionResult<{ id: string }>> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) {
+    return { success: false, error: "Sign in again to delete items" };
+  }
+  const userId = session.user.id;
+
+  const parsedId = itemIdSchema.safeParse(id);
+  if (!parsedId.success) return { success: false, error: ITEM_NOT_FOUND };
+
+  if (!(await consumeMutationQuota(userId))) {
+    return { success: false, error: MUTATION_LIMIT_MESSAGE };
+  }
+
+  try {
+    const deleted = await withWriteConflictRetry(() =>
+      prisma.$transaction(
+        async (tx) => {
+          const item = await tx.item.findFirst({
+            where: { id: parsedId.data, userId },
+            select: { tags: { select: { tagId: true } } },
+          });
+          if (!item) return false;
+
+          await tx.item.delete({ where: { id: parsedId.data, userId } });
+          await tx.tag.deleteMany({
+            where: {
+              userId,
+              id: { in: item.tags.map(({ tagId }) => tagId) },
+              items: { none: {} },
+            },
+          });
+          return true;
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      ),
+    );
+    if (!deleted) return { success: false, error: ITEM_NOT_FOUND };
+
+    revalidateItemViews();
+    return { success: true, data: { id: parsedId.data } };
+  } catch (error) {
+    if (isRecordNotFound(error)) {
+      return { success: false, error: ITEM_NOT_FOUND };
+    }
+    console.error("Failed to delete item", error);
+    return { success: false, error: "Could not delete the item. Try again." };
   }
 }
 

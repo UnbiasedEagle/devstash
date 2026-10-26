@@ -2,6 +2,7 @@
 
 import { Pencil } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import DeleteItemButton from "@/components/items/DeleteItemButton";
 import ItemEditForm from "@/components/items/ItemEditForm";
 import ItemFlagToggles from "@/components/items/ItemFlagToggles";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,7 @@ export default function ItemDetailShell({
             Edit
           </Button>
         )}
+        <DeleteItemButton id={item.id} title={item.title} />
       </div>
       {children}
     </div>

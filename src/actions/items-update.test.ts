@@ -223,6 +223,19 @@ describe("updateItem", () => {
     expect(mocks.update).toHaveBeenCalledTimes(2);
   });
 
+  it("retries when a delete removes a tag as unused before the edit links it", async () => {
+    mocks.update
+      .mockRejectedValueOnce(
+        new mocks.PrismaClientKnownRequestError("fk", { code: "P2003" }),
+      )
+      .mockResolvedValue({ id: "item-1" });
+
+    const result = await updateItem("item-1", validSnippet);
+
+    expect(result.success).toBe(true);
+    expect(mocks.update).toHaveBeenCalledTimes(2);
+  });
+
   it("never exposes database messages", async () => {
     mocks.update.mockRejectedValue(new Error("postgres://user:secret@db"));
 

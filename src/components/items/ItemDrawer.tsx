@@ -39,6 +39,7 @@ interface ItemDrawerContextValue {
   toggleFlag: (id: string, flag: keyof ItemFlags, value: boolean) => void;
   setDirty: (dirty: boolean) => void;
   confirmDiscard: (onConfirm: () => void) => void;
+  closeDrawer: () => void;
 }
 
 interface FlagChange {
@@ -131,12 +132,14 @@ export function ItemDrawerProvider({
     }
   }
 
+  function closeDrawer() {
+    setOpen(false);
+    router.replace(closeHref, { scroll: false });
+  }
+
   function handleOpenChange(nextOpen: boolean) {
     if (nextOpen) return;
-    confirmDiscard(() => {
-      setOpen(false);
-      router.replace(closeHref, { scroll: false });
-    });
+    confirmDiscard(closeDrawer);
   }
 
   function toggleFlag(id: string, flag: keyof ItemFlags, value: boolean) {
@@ -171,6 +174,7 @@ export function ItemDrawerProvider({
         toggleFlag,
         setDirty,
         confirmDiscard,
+        closeDrawer,
       }}
     >
       {children}
