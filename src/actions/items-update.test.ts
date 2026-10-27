@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => {
     findFirst: vi.fn(),
     update: vi.fn(),
     updateMany: vi.fn(),
+    tagDeleteMany: vi.fn(),
     revalidatePath: vi.fn(),
   };
 });
@@ -31,6 +32,8 @@ vi.mock("@/lib/prisma", () => ({
       update: mocks.update,
       updateMany: mocks.updateMany,
     },
+    tag: { deleteMany: mocks.tagDeleteMany },
+    $transaction: (operations: Promise<unknown>[]) => Promise.all(operations),
   },
 }));
 vi.mock("@/generated/prisma/client", () => ({
@@ -61,8 +64,12 @@ describe("updateItem", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mocks.getSession.mockResolvedValue({ user: { id: "user-1" } });
     mocks.consumeMutationQuota.mockResolvedValue(true);
-    mocks.findFirst.mockResolvedValue({ itemType: { name: "Snippet" } });
+    mocks.findFirst.mockResolvedValue({
+      itemType: { name: "Snippet" },
+      tags: [],
+    });
     mocks.update.mockResolvedValue({ id: "item-1" });
+    mocks.tagDeleteMany.mockResolvedValue({ count: 0 });
   });
 
   afterEach(() => {
@@ -143,8 +150,25 @@ describe("updateItem", () => {
     );
   });
 
+  it("removes only the dropped tags that no other item uses", async () => {
+    mocks.findFirst.mockResolvedValue({
+      itemType: { name: "Snippet" },
+      tags: [{ tagId: "tag-old" }, { tagId: "tag-kept" }],
+    });
+
+    await updateItem("item-1", validSnippet);
+
+    expect(mocks.tagDeleteMany).toHaveBeenCalledWith({
+      where: {
+        userId: "user-1",
+        id: { in: ["tag-old", "tag-kept"] },
+        items: { none: {} },
+      },
+    });
+  });
+
   it("clears an emptied description and the fields the type doesn't use", async () => {
-    mocks.findFirst.mockResolvedValue({ itemType: { name: "URL" } });
+    mocks.findFirst.mockResolvedValue({ itemType: { name: "URL" }, tags: [] });
 
     await updateItem("item-1", {
       type: "URL",
@@ -167,6 +191,7 @@ describe("updateItem", () => {
     mocks.findFirst.mockResolvedValue({
       language: "tsx",
       itemType: { name: "Snippet" },
+      tags: [],
     });
 
     await updateItem("item-1", { ...validSnippet, language: undefined });
@@ -178,6 +203,7 @@ describe("updateItem", () => {
     mocks.findFirst.mockResolvedValue({
       language: "python",
       itemType: { name: "Snippet" },
+      tags: [],
     });
 
     await updateItem("item-1", { ...validSnippet, language: undefined });

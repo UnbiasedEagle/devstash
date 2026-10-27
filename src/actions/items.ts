@@ -166,7 +166,11 @@ export async function updateItem(
   try {
     const existing = await prisma.item.findFirst({
       where: { id: parsedId.data, userId },
-      select: { language: true, itemType: { select: { name: true } } },
+      select: {
+        language: true,
+        itemType: { select: { name: true } },
+        tags: { select: { tagId: true } },
+      },
     });
     // The type can't change, so a submitted type that differs from the stored one is treated as a bad id
     if (!existing || existing.itemType.name !== type) {
@@ -183,29 +187,37 @@ export async function updateItem(
         ? storedLanguage
         : (submittedLanguage ?? null);
 
+    // Tags the edit drops are removed once no item uses them, so the tag list stays clean
+    const previousTagIds = existing.tags.map(({ tagId }) => tagId);
+
     await withWriteConflictRetry(() =>
-      prisma.item.update({
-        where: { id: parsedId.data, userId },
-        data: {
-          title,
-          description: description || null,
-          content: "content" in parsed.data ? parsed.data.content : null,
-          url: "url" in parsed.data ? parsed.data.url : null,
-          language,
-          tags: {
-            deleteMany: {},
-            create: tags.map((name) => ({
-              tag: {
-                connectOrCreate: {
-                  where: { userId_name: { userId, name } },
-                  create: { name, userId },
+      prisma.$transaction([
+        prisma.item.update({
+          where: { id: parsedId.data, userId },
+          data: {
+            title,
+            description: description || null,
+            content: "content" in parsed.data ? parsed.data.content : null,
+            url: "url" in parsed.data ? parsed.data.url : null,
+            language,
+            tags: {
+              deleteMany: {},
+              create: tags.map((name) => ({
+                tag: {
+                  connectOrCreate: {
+                    where: { userId_name: { userId, name } },
+                    create: { name, userId },
+                  },
                 },
-              },
-            })),
+              })),
+            },
           },
-        },
-        select: { id: true },
-      }),
+          select: { id: true },
+        }),
+        prisma.tag.deleteMany({
+          where: { userId, id: { in: previousTagIds }, items: { none: {} } },
+        }),
+      ]),
     );
 
     revalidateItemViews();
