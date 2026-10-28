@@ -3,12 +3,13 @@
 import { githubDark } from "@uiw/codemirror-theme-github";
 import CodeMirror from "@uiw/react-codemirror";
 import { EditorView } from "@codemirror/view";
-import type { Extension } from "@codemirror/state";
+import { EditorState, type Extension } from "@codemirror/state";
 import { Wand2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { canFormat, formatCode } from "@/lib/format-code";
+import { MAX_CONTENT_LENGTH } from "@/lib/item-schemas";
 
 interface CodeEditorProps {
   id: string;
@@ -30,6 +31,13 @@ const BASIC_SETUP = {
   highlightActiveLine: false,
 };
 
+// Slack above the schema limit so going over it shows the validation message instead of silently refusing the edit
+const MAX_EDITOR_LENGTH = MAX_CONTENT_LENGTH + 1000;
+
+export const contentLengthLimit = EditorState.changeFilter.of(
+  (transaction) => transaction.newDoc.length <= MAX_EDITOR_LENGTH,
+);
+
 async function loadLanguage(language: string): Promise<Extension | null> {
   switch (language) {
     case "typescript":
@@ -42,6 +50,8 @@ async function loadLanguage(language: string): Promise<Extension | null> {
       return (await import("@codemirror/lang-python")).python();
     case "json":
       return (await import("@codemirror/lang-json")).json();
+    case "markdown":
+      return (await import("@codemirror/lang-markdown")).markdown();
     case "html":
       return (await import("@codemirror/lang-html")).html();
     case "css":
@@ -105,7 +115,7 @@ export default function CodeEditor({
       ...(invalid && { "aria-invalid": "true" }),
       ...(describedBy && { "aria-describedby": describedBy }),
     });
-    return [attributes, EditorView.lineWrapping].concat(
+    return [attributes, EditorView.lineWrapping, contentLengthLimit].concat(
       languageExtension ?? [],
     );
   }, [id, label, invalid, describedBy, languageExtension]);

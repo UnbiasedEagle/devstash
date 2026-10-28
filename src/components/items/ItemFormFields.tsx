@@ -3,15 +3,14 @@
 import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
 import { z } from "zod";
+import MarkdownEditor from "@/components/items/MarkdownEditor";
 import TagInput from "@/components/items/TagInput";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import {
   createItemSchema,
   ITEM_LANGUAGES,
-  MAX_CONTENT_LENGTH,
   type CreatableItemType,
   type CreateItemInput,
 } from "@/lib/item-schemas";
@@ -121,6 +120,18 @@ export default function ItemFormFields({
     return errors[name]?.[0];
   }
 
+  const editor = (
+    <CodeEditor
+      id="content"
+      label="Content"
+      value={values.content}
+      language={isCode ? values.language : "markdown"}
+      invalid={Boolean(describe("content"))}
+      describedBy={describe("content") ? "content-error" : undefined}
+      onChange={(content) => onChange("content", content)}
+    />
+  );
+
   return (
     <>
       <Field id="title" label="Title" error={describe("title")}>
@@ -188,28 +199,15 @@ export default function ItemFormFields({
           )}
           <Field id="content" label="Content" error={describe("content")}>
             {isCode ? (
-              <CodeEditor
-                id="content"
-                label="Content"
-                value={values.content}
-                language={values.language}
-                invalid={Boolean(describe("content"))}
-                describedBy={describe("content") ? "content-error" : undefined}
-                onChange={(content) => onChange("content", content)}
-              />
+              editor
             ) : (
-              <Textarea
+              <MarkdownEditor
                 id="content"
                 value={values.content}
-                className="h-56 resize-none"
-                // Slack above the schema limit so going over it shows the validation message instead of silently truncating
-                maxLength={MAX_CONTENT_LENGTH + 1000}
-                aria-invalid={describe("content") ? true : undefined}
-                aria-describedby={
-                  describe("content") ? "content-error" : undefined
-                }
-                onChange={(event) => onChange("content", event.target.value)}
-              />
+                error={errors.content}
+              >
+                {editor}
+              </MarkdownEditor>
             )}
           </Field>
         </>
