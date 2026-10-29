@@ -59,7 +59,7 @@ async function ItemsContent({
   ).data;
   // Started before the list resolves so the drawer does not wait for the list queries
   const openItemPromise = openItemId
-    ? getItemById(userId, type.id, openItemId)
+    ? getItemById(userId, openItemId, { itemTypeId: type.id })
     : null;
 
   const { items, total, page, totalPages } = await getItemsByType(

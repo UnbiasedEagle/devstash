@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { connection } from "next/server";
 import { Pin } from "lucide-react";
 import CollectionCard, {
@@ -102,7 +103,15 @@ export default function DashboardPage() {
       </Suspense>
 
       <section>
-        <h2 className="mb-4 text-lg font-semibold">Recent collections</h2>
+        <div className="mb-4 flex items-baseline justify-between gap-4">
+          <h2 className="text-lg font-semibold">Recent collections</h2>
+          <Link
+            href="/collections"
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            View all
+          </Link>
+        </div>
         <Suspense
           fallback={
             <div

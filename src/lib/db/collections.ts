@@ -2,6 +2,7 @@ import "server-only";
 import { itemTypeSummarySelect } from "@/lib/db/item-types";
 import { prisma } from "@/lib/prisma";
 import type {
+  CollectionSummary,
   DashboardCollection,
   ItemTypeSummary,
   SidebarCollection,
@@ -81,9 +82,27 @@ export async function getSidebarCollections(
   return { favorites, recent };
 }
 
-export async function getRecentCollections(
+export async function getCollectionById(
   userId: string,
-  limit: number,
+  id: string,
+): Promise<CollectionSummary | null> {
+  return prisma.collection.findFirst({
+    where: { id, userId },
+    select: { id: true, name: true, description: true, isFavorite: true },
+  });
+}
+
+export function getRecentCollections(userId: string, limit: number) {
+  return findDashboardCollections(userId, limit);
+}
+
+export function getAllCollections(userId: string) {
+  return findDashboardCollections(userId);
+}
+
+async function findDashboardCollections(
+  userId: string,
+  limit?: number,
 ): Promise<DashboardCollection[]> {
   const collections = await prisma.collection.findMany({
     where: { userId },

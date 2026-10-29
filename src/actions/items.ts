@@ -138,6 +138,8 @@ function isRecordNotFound(error: unknown) {
 function revalidateItemViews() {
   revalidatePath("/dashboard");
   revalidatePath("/items/[type]", "page");
+  revalidatePath("/collections");
+  revalidatePath("/collections/[id]", "page");
   revalidatePath("/profile");
 }
 

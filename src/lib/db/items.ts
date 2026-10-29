@@ -50,13 +50,15 @@ const detailItemSelect = {
   tags: { select: { tag: { select: { name: true } } } },
 } satisfies Prisma.ItemSelect;
 
+export type ItemScope = { itemTypeId: string } | { collectionId: string };
+
 export async function getItemById(
   userId: string,
-  itemTypeId: string,
   id: string,
+  scope: ItemScope,
 ): Promise<DetailItem | null> {
   const item = await prisma.item.findFirst({
-    where: { id, userId, itemTypeId },
+    where: { id, userId, ...scope },
     select: detailItemSelect,
   });
   if (!item) return null;
@@ -65,12 +67,28 @@ export async function getItemById(
   return { ...rest, tags: tags.map(({ tag }) => tag.name) };
 }
 
-export async function getItemsByType(
+export function getItemsByType(
   userId: string,
   itemTypeId: string,
   requestedPage: number,
 ): Promise<ItemPage> {
-  const where = { userId, itemTypeId };
+  return getItemPage(userId, { itemTypeId }, requestedPage);
+}
+
+export function getItemsByCollection(
+  userId: string,
+  collectionId: string,
+  requestedPage: number,
+): Promise<ItemPage> {
+  return getItemPage(userId, { collectionId }, requestedPage);
+}
+
+async function getItemPage(
+  userId: string,
+  scope: ItemScope,
+  requestedPage: number,
+): Promise<ItemPage> {
+  const where = { userId, ...scope };
   // One snapshot, so the count can't disagree with the page if items change in between
   const { total, totalPages, page, items } = await prisma.$transaction(
     async (tx) => {

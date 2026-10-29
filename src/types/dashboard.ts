@@ -30,6 +30,11 @@ export interface DashboardCollection {
   itemTypes: ItemTypeSummary[];
 }
 
+export type CollectionSummary = Pick<
+  DashboardCollection,
+  "id" | "name" | "description" | "isFavorite"
+>;
+
 export interface SidebarCollection {
   id: string;
   name: string;
