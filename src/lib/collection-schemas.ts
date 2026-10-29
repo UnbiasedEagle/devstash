@@ -3,7 +3,7 @@ import { MAX_DESCRIPTION_LENGTH } from "@/lib/item-schemas";
 
 export const MAX_COLLECTION_NAME_LENGTH = 100;
 
-export const createCollectionSchema = z.object({
+export const collectionSchema = z.object({
   name: z
     .string()
     .trim()
@@ -22,4 +22,4 @@ export const createCollectionSchema = z.object({
     .optional(),
 });
 
-export type CreateCollectionInput = z.infer<typeof createCollectionSchema>;
+export type CollectionInput = z.infer<typeof collectionSchema>;

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Star } from "lucide-react";
+import CollectionFavoriteButton from "@/components/collections/CollectionFavoriteButton";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { DashboardCollection } from "@/types/dashboard";
@@ -31,23 +31,28 @@ export default function CollectionCard({ collection }: CollectionCardProps) {
   const types = collection.itemTypes;
 
   return (
-    <Link
-      href={`/collections/${collection.id}`}
-      className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card p-5 transition-colors hover:border-foreground/25 focus-visible:outline-2"
-    >
+    <div className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card p-5 transition-colors hover:border-foreground/25 has-[a:focus-visible]:outline-2">
       <span
         aria-hidden
         className="absolute inset-x-0 top-0 h-0.5 opacity-70 transition-opacity group-hover:opacity-100"
         style={{ backgroundColor: collection.color }}
       />
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-base font-semibold">{collection.name}</h3>
-        {collection.isFavorite && (
-          <Star
-            aria-label="Favorite"
-            className="mt-1 size-3.5 shrink-0 fill-yellow-500 text-yellow-500"
-          />
-        )}
+        <h3 className="min-w-0 truncate text-base font-semibold">
+          <Link
+            href={`/collections/${collection.id}`}
+            title={collection.name}
+            className="outline-none after:absolute after:inset-0"
+          >
+            {collection.name}
+          </Link>
+        </h3>
+        <CollectionFavoriteButton
+          id={collection.id}
+          name={collection.name}
+          isFavorite={collection.isFavorite}
+          className="relative z-10 -mr-2 -mt-1.5 shrink-0"
+        />
       </div>
       {collection.description && (
         <p className="mt-1 text-sm text-muted-foreground">
@@ -74,6 +79,6 @@ export default function CollectionCard({ collection }: CollectionCardProps) {
           {collection.itemCount} items
         </span>
       </div>
-    </Link>
+    </div>
   );
 }
