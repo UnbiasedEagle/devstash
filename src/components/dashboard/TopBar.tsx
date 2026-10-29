@@ -1,9 +1,9 @@
-import { FolderPlus, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Suspense } from "react";
+import NewCollectionDialog from "@/components/collections/NewCollectionDialog";
 import NewItemButton, {
   NewItemButtonFallback,
 } from "@/components/items/NewItemButton";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export default function TopBar() {
@@ -17,14 +17,7 @@ export default function TopBar() {
         </kbd>
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-2">
-        <Button
-          variant="outline"
-          className="max-sm:size-8 max-sm:px-0"
-          aria-label="New Collection"
-        >
-          <FolderPlus />
-          <span className="max-sm:hidden">New Collection</span>
-        </Button>
+        <NewCollectionDialog />
         <Suspense fallback={<NewItemButtonFallback />}>
           <NewItemButton />
         </Suspense>
