@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => {
   const tx = {
     user: { findUnique: vi.fn() },
     item: { count: vi.fn(), create: vi.fn() },
+    collection: { findFirst: vi.fn() },
   };
   return {
     PrismaClientKnownRequestError,
@@ -18,6 +19,7 @@ const mocks = vi.hoisted(() => {
     getSession: vi.fn(),
     consumeMutationQuota: vi.fn(),
     findItemType: vi.fn(),
+    collectionFindFirst: vi.fn(),
     transaction: vi.fn(),
     revalidatePath: vi.fn(),
   };
@@ -31,6 +33,7 @@ vi.mock("@/lib/auth", () => ({
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     itemType: { findFirst: mocks.findItemType },
+    collection: { findFirst: mocks.collectionFindFirst },
     $transaction: mocks.transaction,
   },
 }));
@@ -133,6 +136,80 @@ describe("createItem", () => {
       userId: "user-1",
       itemTypeId: "type-snippet",
     });
+  });
+
+  it("puts the item in a collection the user owns and revalidates the collection pages", async () => {
+    mocks.tx.collection.findFirst.mockResolvedValue({ id: "col-1" });
+
+    const result = await createItem({ ...validSnippet, collectionId: "col-1" });
+
+    expect(result.success).toBe(true);
+    expect(mocks.tx.collection.findFirst).toHaveBeenCalledWith({
+      where: { id: "col-1", userId: "user-1" },
+      select: { id: true },
+    });
+    expect(mocks.tx.item.create.mock.calls[0][0].data.collectionId).toBe(
+      "col-1",
+    );
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/collections");
+    expect(mocks.revalidatePath).toHaveBeenCalledWith(
+      "/collections/[id]",
+      "page",
+    );
+  });
+
+  it("refuses another user's collection and saves nothing", async () => {
+    mocks.tx.collection.findFirst.mockResolvedValue(null);
+
+    const result = await createItem({
+      ...validSnippet,
+      collectionId: "someone-elses-collection",
+    });
+
+    expect(result).toEqual({ success: false, error: "Collection not found" });
+    expect(mocks.tx.item.create).not.toHaveBeenCalled();
+    expect(mocks.revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("reports Collection not found when the collection is deleted after the ownership check", async () => {
+    mocks.transaction.mockRejectedValue(conflict("P2003"));
+    mocks.collectionFindFirst.mockResolvedValue(null);
+
+    const result = await createItem({ ...validSnippet, collectionId: "col-1" });
+
+    expect(result).toEqual({ success: false, error: "Collection not found" });
+    expect(mocks.collectionFindFirst).toHaveBeenCalledWith({
+      where: { id: "col-1", userId: "user-1" },
+      select: { id: true },
+    });
+  });
+
+  it("keeps the generic error for a foreign key failure while the collection still exists", async () => {
+    mocks.transaction.mockRejectedValue(conflict("P2003"));
+    mocks.collectionFindFirst.mockResolvedValue({ id: "col-1" });
+
+    const result = await createItem({ ...validSnippet, collectionId: "col-1" });
+
+    expect(result).toEqual({
+      success: false,
+      error: "Could not create the item. Try again.",
+    });
+  });
+
+  it("does not look up a collection for a foreign key failure when none was chosen", async () => {
+    mocks.transaction.mockRejectedValue(conflict("P2003"));
+
+    const result = await createItem(validSnippet);
+
+    expect(result.success).toBe(false);
+    expect(mocks.collectionFindFirst).not.toHaveBeenCalled();
+  });
+
+  it("leaves the item uncollected without checking a collection when none is chosen", async () => {
+    await createItem(validSnippet);
+
+    expect(mocks.tx.collection.findFirst).not.toHaveBeenCalled();
+    expect(mocks.tx.item.create.mock.calls[0][0].data.collectionId).toBeNull();
   });
 
   it("saves tags with connectOrCreate on the user's own tags", async () => {

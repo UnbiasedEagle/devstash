@@ -15,7 +15,7 @@ import Pagination from "@/components/items/Pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { collectionIdSchema } from "@/lib/collection-schemas";
 import { getCollectionById } from "@/lib/db/collections";
-import { getItemById, getItemsByCollection } from "@/lib/db/items";
+import { getItemForUser, getItemsByCollection } from "@/lib/db/items";
 import { getCurrentUserId } from "@/lib/db/user";
 import { parseItemId } from "@/lib/item-schemas";
 import { parsePage } from "@/lib/pagination";
@@ -59,7 +59,7 @@ async function CollectionContent({
   const openItemId = parseItemId(itemParam);
   // Started before the list resolves so the drawer does not wait for the list queries
   const openItemPromise = openItemId
-    ? getItemById(userId, openItemId, { collectionId: collection.id })
+    ? getItemForUser(userId, openItemId)
     : null;
 
   const { items, total, page, totalPages } = await getItemsByCollection(

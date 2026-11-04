@@ -6,16 +6,18 @@ import DeleteItemButton from "@/components/items/DeleteItemButton";
 import ItemEditForm from "@/components/items/ItemEditForm";
 import ItemFlagToggles from "@/components/items/ItemFlagToggles";
 import { Button } from "@/components/ui/button";
-import type { DetailItem } from "@/types/items";
+import type { CollectionOption, DetailItem } from "@/types/items";
 
 interface ItemDetailShellProps {
   item: DetailItem;
+  collections: CollectionOption[];
   editable: boolean;
   children: ReactNode;
 }
 
 export default function ItemDetailShell({
   item,
+  collections,
   editable,
   children,
 }: ItemDetailShellProps) {
@@ -33,6 +35,7 @@ export default function ItemDetailShell({
       <div className="p-6">
         <ItemEditForm
           item={item}
+          collections={collections}
           onCancel={() => setEditing(false)}
           onSaved={() => setSavedAt(item.updatedAt.getTime())}
         />

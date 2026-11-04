@@ -1,3 +1,5 @@
+import { Folder } from "lucide-react";
+import Link from "next/link";
 import CodeBlock from "@/components/items/CodeBlock";
 import { CopyButton } from "@/components/items/CopyButton";
 import MarkdownContent from "@/components/items/MarkdownContent";
@@ -5,7 +7,7 @@ import ItemDetailShell from "@/components/items/ItemDetailShell";
 import ItemDrawerHeader from "@/components/items/ItemDrawerHeader";
 import { SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { isCreatableItemType } from "@/lib/item-schemas";
-import type { DetailItem } from "@/types/items";
+import type { CollectionOption, DetailItem } from "@/types/items";
 
 const CODE_TYPES = ["Snippet", "Command"];
 const COPYABLE_TYPES = ["Snippet", "Command", "Prompt"];
@@ -92,13 +94,20 @@ export function ItemNotFound() {
   );
 }
 
-export default function ItemDetail({ item }: { item: DetailItem }) {
+export default function ItemDetail({
+  item,
+  collections,
+}: {
+  item: DetailItem;
+  collections: CollectionOption[];
+}) {
   const copyText = getCopyText(item);
 
   return (
     <ItemDetailShell
       key={item.id}
       item={item}
+      collections={collections}
       editable={isCreatableItemType(item.itemType.name)}
     >
       <ItemDrawerHeader
@@ -117,6 +126,16 @@ export default function ItemDetail({ item }: { item: DetailItem }) {
       <ItemBody item={item} />
 
       <footer className="mt-2 flex flex-wrap gap-x-6 gap-y-1 border-t border-border pt-4 text-xs text-muted-foreground">
+        {item.collection && (
+          <Link
+            href={`/collections/${item.collection.id}`}
+            aria-label={`Collection: ${item.collection.name}`}
+            className="flex min-w-0 items-center gap-1.5 hover:text-foreground focus-visible:text-foreground focus-visible:underline"
+          >
+            <Folder aria-hidden className="size-3.5 shrink-0" />
+            <span className="truncate">{item.collection.name}</span>
+          </Link>
+        )}
         <span>Created {dateFormatter.format(item.createdAt)}</span>
         <span>Updated {dateFormatter.format(item.updatedAt)}</span>
       </footer>

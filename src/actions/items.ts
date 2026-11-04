@@ -24,9 +24,11 @@ interface CreatedItem {
 }
 
 class FreeLimitError extends Error {}
+class CollectionNotFoundError extends Error {}
 
 const GENERIC_ERROR = "Could not create the item. Try again.";
 const ITEM_NOT_FOUND = "Item not found";
+const COLLECTION_NOT_FOUND = "Collection not found";
 
 export async function createItem(
   input: unknown,
@@ -41,7 +43,7 @@ export async function createItem(
   if (!parsed.success) {
     return { success: false, error: "Check the form and try again" };
   }
-  const { type, title, description, tags } = parsed.data;
+  const { type, title, description, tags, collectionId } = parsed.data;
 
   if (!(await consumeMutationQuota(userId))) {
     return { success: false, error: MUTATION_LIMIT_MESSAGE };
@@ -65,6 +67,13 @@ export async function createItem(
           if (!user?.isPro && itemCount >= FREE_ITEM_LIMIT) {
             throw new FreeLimitError();
           }
+          if (collectionId) {
+            const collection = await tx.collection.findFirst({
+              where: { id: collectionId, userId },
+              select: { id: true },
+            });
+            if (!collection) throw new CollectionNotFoundError();
+          }
 
           return tx.item.create({
             data: {
@@ -76,6 +85,7 @@ export async function createItem(
               language: "language" in parsed.data ? parsed.data.language : null,
               userId,
               itemTypeId: itemType.id,
+              collectionId: collectionId ?? null,
               tags: {
                 create: tags.map((name) => ({
                   tag: {
@@ -96,6 +106,10 @@ export async function createItem(
 
     revalidatePath("/dashboard");
     revalidatePath(`/items/${type.toLowerCase()}`);
+    if (collectionId) {
+      revalidatePath("/collections");
+      revalidatePath("/collections/[id]", "page");
+    }
     return { success: true, data: { id: item.id, type } };
   } catch (error) {
     if (error instanceof FreeLimitError) {
@@ -103,6 +117,12 @@ export async function createItem(
         success: false,
         error: `The free plan is limited to ${FREE_ITEM_LIMIT} items. Upgrade to Pro to add more.`,
       };
+    }
+    if (
+      error instanceof CollectionNotFoundError ||
+      (await isCollectionGone(error, userId, collectionId))
+    ) {
+      return { success: false, error: COLLECTION_NOT_FOUND };
     }
     console.error("Failed to create item", error);
     return { success: false, error: GENERIC_ERROR };
@@ -115,6 +135,26 @@ function isRecordNotFound(error: unknown) {
     error instanceof Prisma.PrismaClientKnownRequestError &&
     error.code === "P2025"
   );
+}
+
+// P2003 is also what a vanished tag causes, so it only means the collection was deleted after the ownership check when the collection really is gone
+async function isCollectionGone(
+  error: unknown,
+  userId: string,
+  collectionId: string | undefined,
+) {
+  if (
+    !collectionId ||
+    !(error instanceof Prisma.PrismaClientKnownRequestError) ||
+    error.code !== "P2003"
+  ) {
+    return false;
+  }
+  const collection = await prisma.collection.findFirst({
+    where: { id: collectionId, userId },
+    select: { id: true },
+  });
+  return collection === null;
 }
 
 function revalidateItemViews() {
@@ -141,7 +181,7 @@ export async function updateItem(
   if (!parsed.success) {
     return { success: false, error: "Check the form and try again" };
   }
-  const { type, title, description, tags } = parsed.data;
+  const { type, title, description, tags, collectionId } = parsed.data;
 
   if (!(await consumeMutationQuota(userId))) {
     return { success: false, error: MUTATION_LIMIT_MESSAGE };
@@ -159,6 +199,13 @@ export async function updateItem(
     // The type can't change, so a submitted type that differs from the stored one is treated as a bad id
     if (!existing || existing.itemType.name !== type) {
       return { success: false, error: ITEM_NOT_FOUND };
+    }
+    if (collectionId) {
+      const collection = await prisma.collection.findFirst({
+        where: { id: collectionId, userId },
+        select: { id: true },
+      });
+      if (!collection) return { success: false, error: COLLECTION_NOT_FOUND };
     }
     const submittedLanguage =
       "language" in parsed.data ? parsed.data.language : undefined;
@@ -184,6 +231,8 @@ export async function updateItem(
             content: "content" in parsed.data ? parsed.data.content : null,
             url: "url" in parsed.data ? parsed.data.url : null,
             language,
+            // The edit form always sends the collection, so leaving it out means "None" rather than "unchanged"
+            collectionId: collectionId ?? null,
             tags: {
               deleteMany: {},
               create: tags.map((name) => ({
@@ -209,6 +258,9 @@ export async function updateItem(
   } catch (error) {
     if (isRecordNotFound(error)) {
       return { success: false, error: ITEM_NOT_FOUND };
+    }
+    if (await isCollectionGone(error, userId, collectionId)) {
+      return { success: false, error: COLLECTION_NOT_FOUND };
     }
     console.error("Failed to update item", error);
     return { success: false, error: "Could not update the item. Try again." };

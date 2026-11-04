@@ -64,18 +64,18 @@ describe("collection item queries", () => {
     });
   });
 
-  it("scopes a single item lookup to the user and the collection", async () => {
+  it("scopes a single item lookup to the user and the item type", async () => {
     mocks.findFirst.mockResolvedValue(null);
 
     const item = await getItemById("user-1", "item-1", {
-      collectionId: "col-1",
+      itemTypeId: "type-1",
     });
 
     expect(item).toBeNull();
     expect(mocks.findFirst.mock.calls[0][0].where).toEqual({
       id: "item-1",
       userId: "user-1",
-      collectionId: "col-1",
+      itemTypeId: "type-1",
     });
   });
 

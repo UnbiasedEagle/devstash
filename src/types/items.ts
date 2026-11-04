@@ -24,6 +24,11 @@ export interface ItemPage {
   totalPages: number;
 }
 
+export interface CollectionOption {
+  id: string;
+  name: string;
+}
+
 export interface DetailItem {
   id: string;
   title: string;
@@ -40,4 +45,5 @@ export interface DetailItem {
   updatedAt: Date;
   itemType: ItemTypeSummary;
   tags: string[];
+  collection: CollectionOption | null;
 }

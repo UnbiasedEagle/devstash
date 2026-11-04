@@ -109,7 +109,9 @@ const url = z
   .refine(isHttpUrl, "Enter a valid http or https URL")
   .refine(hasNoCredentials, "Remove the username and password from the URL");
 
-const common = { title, description, tags };
+const collectionId = z.string().min(1).max(64).optional();
+
+const common = { title, description, tags, collectionId };
 
 export const createItemSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("Snippet"), ...common, content, language }),

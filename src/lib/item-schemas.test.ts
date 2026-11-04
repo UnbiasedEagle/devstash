@@ -36,6 +36,18 @@ describe("createItemSchema common fields", () => {
     expect(createItemSchema.safeParse(snippet).success).toBe(true);
   });
 
+  it("treats the collection as optional but rejects an empty or oversized id", () => {
+    expect(
+      createItemSchema.safeParse({ ...snippet, collectionId: "col-1" }).success,
+    ).toBe(true);
+    expect(
+      errorsFor({ ...snippet, collectionId: "" }, "collectionId"),
+    ).toHaveLength(1);
+    expect(
+      errorsFor({ ...snippet, collectionId: "x".repeat(65) }, "collectionId"),
+    ).toHaveLength(1);
+  });
+
   it("trims the title and rejects an empty one", () => {
     const parsed = createItemSchema.parse({ ...snippet, title: "  Hook  " });
     expect(parsed.title).toBe("Hook");

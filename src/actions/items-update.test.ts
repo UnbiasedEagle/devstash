@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => {
     getSession: vi.fn(),
     consumeMutationQuota: vi.fn(),
     findFirst: vi.fn(),
+    collectionFindFirst: vi.fn(),
     update: vi.fn(),
     updateMany: vi.fn(),
     tagDeleteMany: vi.fn(),
@@ -33,6 +34,7 @@ vi.mock("@/lib/prisma", () => ({
       updateMany: mocks.updateMany,
     },
     tag: { deleteMany: mocks.tagDeleteMany },
+    collection: { findFirst: mocks.collectionFindFirst },
     $transaction: (operations: Promise<unknown>[]) => Promise.all(operations),
   },
 }));
@@ -148,6 +150,76 @@ describe("updateItem", () => {
         },
       })),
     );
+  });
+
+  it("moves the item into a collection the user owns", async () => {
+    mocks.collectionFindFirst.mockResolvedValue({ id: "col-1" });
+
+    const result = await updateItem("item-1", {
+      ...validSnippet,
+      collectionId: "col-1",
+    });
+
+    expect(result.success).toBe(true);
+    expect(mocks.collectionFindFirst).toHaveBeenCalledWith({
+      where: { id: "col-1", userId: "user-1" },
+      select: { id: true },
+    });
+    expect(mocks.update.mock.calls[0][0].data.collectionId).toBe("col-1");
+  });
+
+  it("refuses another user's collection and changes nothing", async () => {
+    mocks.collectionFindFirst.mockResolvedValue(null);
+
+    const result = await updateItem("item-1", {
+      ...validSnippet,
+      collectionId: "someone-elses-collection",
+    });
+
+    expect(result).toEqual({ success: false, error: "Collection not found" });
+    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("reports Collection not found when the collection is deleted after the ownership check", async () => {
+    mocks.collectionFindFirst
+      .mockResolvedValueOnce({ id: "col-1" })
+      .mockResolvedValueOnce(null);
+    mocks.update.mockRejectedValue(
+      new mocks.PrismaClientKnownRequestError("fk", { code: "P2003" }),
+    );
+
+    const result = await updateItem("item-1", {
+      ...validSnippet,
+      collectionId: "col-1",
+    });
+
+    expect(result).toEqual({ success: false, error: "Collection not found" });
+    expect(mocks.revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("keeps the generic error for a foreign key failure while the collection still exists", async () => {
+    mocks.collectionFindFirst.mockResolvedValue({ id: "col-1" });
+    mocks.update.mockRejectedValue(
+      new mocks.PrismaClientKnownRequestError("fk", { code: "P2003" }),
+    );
+
+    const result = await updateItem("item-1", {
+      ...validSnippet,
+      collectionId: "col-1",
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "Could not update the item. Try again.",
+    });
+  });
+
+  it("takes the item out of its collection when none is chosen", async () => {
+    await updateItem("item-1", validSnippet);
+
+    expect(mocks.collectionFindFirst).not.toHaveBeenCalled();
+    expect(mocks.update.mock.calls[0][0].data.collectionId).toBeNull();
   });
 
   it("removes only the dropped tags that no other item uses", async () => {

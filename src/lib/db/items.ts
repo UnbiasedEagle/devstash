@@ -48,6 +48,7 @@ const detailItemSelect = {
   updatedAt: true,
   itemType: { select: itemTypeSummarySelect },
   tags: { select: { tag: { select: { name: true } } } },
+  collection: { select: { id: true, name: true } },
 } satisfies Prisma.ItemSelect;
 
 export type ItemScope = { itemTypeId: string } | { collectionId: string };
@@ -68,7 +69,7 @@ async function findDetailItem(
 export function getItemById(
   userId: string,
   id: string,
-  scope: ItemScope,
+  scope: { itemTypeId: string },
 ): Promise<DetailItem | null> {
   return findDetailItem({ id, userId, ...scope });
 }

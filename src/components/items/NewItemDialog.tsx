@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { CREATABLE_ITEM_TYPES, isCreatableItemType } from "@/lib/item-schemas";
 import type { ItemTypeSummary } from "@/types/dashboard";
+import type { CollectionOption } from "@/types/items";
 
 const EMPTY_VALUES: FormValues = {
   type: "Snippet",
@@ -31,14 +32,17 @@ const EMPTY_VALUES: FormValues = {
   language: "",
   url: "",
   tags: [],
+  collectionId: "",
 };
 
 const DISMISS_REASONS = ["outside-press", "escape-key"];
 
 export default function NewItemDialog({
   itemTypes,
+  collections,
 }: {
   itemTypes: ItemTypeSummary[];
+  collections: CollectionOption[];
 }) {
   const { type: slug } = useParams<{ type?: string }>();
   const [open, setOpen] = useState(false);
@@ -149,6 +153,7 @@ export default function NewItemDialog({
               <ItemFormFields
                 values={values}
                 errors={errors}
+                collections={collections}
                 onChange={update}
               />
             </div>

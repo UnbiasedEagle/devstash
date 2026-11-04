@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { itemTypeSummarySelect } from "@/lib/db/item-types";
 import { prisma } from "@/lib/prisma";
 import type {
@@ -8,6 +9,7 @@ import type {
   SidebarCollection,
   SidebarCollections,
 } from "@/types/dashboard";
+import type { CollectionOption } from "@/types/items";
 
 const EMPTY_COLLECTION_COLOR = "#6b7280";
 
@@ -81,6 +83,16 @@ export async function getSidebarCollections(
   ]);
   return { favorites, recent };
 }
+
+// Cached for the request: the top bar's New Item dialog and an open drawer's edit form both need it
+export const getCollectionOptions = cache(
+  (userId: string): Promise<CollectionOption[]> =>
+    prisma.collection.findMany({
+      where: { userId },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+);
 
 export async function getCollectionById(
   userId: string,

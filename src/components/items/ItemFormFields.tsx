@@ -14,6 +14,7 @@ import {
   type CreatableItemType,
   type CreateItemInput,
 } from "@/lib/item-schemas";
+import type { CollectionOption } from "@/types/items";
 
 const CodeEditor = dynamic(() => import("@/components/items/CodeEditor"), {
   ssr: false,
@@ -28,12 +29,15 @@ export interface FormValues {
   language: string;
   url: string;
   tags: string[];
+  collectionId: string;
 }
 
 export type FormErrors = Partial<Record<string, string[]>>;
 
 const CODE_TYPES = ["Snippet", "Command"];
 const FIELD_ORDER = ["title", "description", "url", "content", "tags"] as const;
+const SELECT_CLASS =
+  "h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30 dark:*:bg-popover";
 
 function buildInput(values: FormValues) {
   const common = {
@@ -41,6 +45,7 @@ function buildInput(values: FormValues) {
     title: values.title,
     description: values.description || undefined,
     tags: values.tags,
+    collectionId: values.collectionId || undefined,
   };
   if (values.type === "URL") return { ...common, url: values.url };
   if (CODE_TYPES.includes(values.type)) {
@@ -74,6 +79,7 @@ export function isItemFormDirty(values: FormValues, initial: FormValues) {
     values.content.trim() !== initial.content.trim() ||
     values.url.trim() !== initial.url.trim() ||
     values.language !== initial.language ||
+    values.collectionId !== initial.collectionId ||
     values.tags.join("\n") !== initial.tags.join("\n")
   );
 }
@@ -105,12 +111,14 @@ function Field({
 interface ItemFormFieldsProps {
   values: FormValues;
   errors: FormErrors;
+  collections: CollectionOption[];
   onChange: <K extends keyof FormValues>(key: K, value: FormValues[K]) => void;
 }
 
 export default function ItemFormFields({
   values,
   errors,
+  collections,
   onChange,
 }: ItemFormFieldsProps) {
   const isUrl = values.type === "URL";
@@ -183,7 +191,7 @@ export default function ItemFormFields({
               <select
                 id="language"
                 value={values.language}
-                className="h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30 dark:*:bg-popover"
+                className={SELECT_CLASS}
                 onChange={(event) => onChange("language", event.target.value)}
               >
                 <option value="">Plain text</option>
@@ -222,6 +230,24 @@ export default function ItemFormFields({
           onChange={(tags) => onChange("tags", tags)}
         />
       </Field>
+
+      {collections.length > 0 && (
+        <Field id="collection" label="Collection (optional)">
+          <select
+            id="collection"
+            value={values.collectionId}
+            className={SELECT_CLASS}
+            onChange={(event) => onChange("collectionId", event.target.value)}
+          >
+            <option value="">None</option>
+            {collections.map((collection) => (
+              <option key={collection.id} value={collection.id}>
+                {collection.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+      )}
     </>
   );
 }

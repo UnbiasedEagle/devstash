@@ -13,9 +13,10 @@ import ItemFormFields, {
 } from "@/components/items/ItemFormFields";
 import { Button } from "@/components/ui/button";
 import { SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { includeCollection } from "@/lib/collection-options";
 import { ITEM_LANGUAGES, type CreatableItemType } from "@/lib/item-schemas";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
-import type { DetailItem } from "@/types/items";
+import type { CollectionOption, DetailItem } from "@/types/items";
 
 function toFormValues(item: DetailItem): FormValues {
   const language = ITEM_LANGUAGES.find((name) => name === item.language);
@@ -27,17 +28,20 @@ function toFormValues(item: DetailItem): FormValues {
     language: language && language !== "plaintext" ? language : "",
     url: item.url ?? "",
     tags: item.tags,
+    collectionId: item.collection?.id ?? "",
   };
 }
 
 interface ItemEditFormProps {
   item: DetailItem;
+  collections: CollectionOption[];
   onCancel: () => void;
   onSaved: () => void;
 }
 
 export default function ItemEditForm({
   item,
+  collections,
   onCancel,
   onSaved,
 }: ItemEditFormProps) {
@@ -102,7 +106,12 @@ export default function ItemEditForm({
         </SheetDescription>
       </header>
 
-      <ItemFormFields values={values} errors={errors} onChange={update} />
+      <ItemFormFields
+        values={values}
+        errors={errors}
+        collections={includeCollection(collections, item.collection)}
+        onChange={update}
+      />
 
       <div className="flex gap-2 max-sm:*:flex-1 sm:justify-end">
         <Button
