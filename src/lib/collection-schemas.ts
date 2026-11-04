@@ -23,3 +23,5 @@ export const collectionSchema = z.object({
 });
 
 export type CollectionInput = z.infer<typeof collectionSchema>;
+
+export const collectionIdSchema = z.string().min(1).max(64);

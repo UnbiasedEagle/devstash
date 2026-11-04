@@ -52,19 +52,32 @@ const detailItemSelect = {
 
 export type ItemScope = { itemTypeId: string } | { collectionId: string };
 
-export async function getItemById(
-  userId: string,
-  id: string,
-  scope: ItemScope,
+async function findDetailItem(
+  where: Prisma.ItemWhereInput,
 ): Promise<DetailItem | null> {
   const item = await prisma.item.findFirst({
-    where: { id, userId, ...scope },
+    where,
     select: detailItemSelect,
   });
   if (!item) return null;
 
   const { tags, ...rest } = item;
   return { ...rest, tags: tags.map(({ tag }) => tag.name) };
+}
+
+export function getItemById(
+  userId: string,
+  id: string,
+  scope: ItemScope,
+): Promise<DetailItem | null> {
+  return findDetailItem({ id, userId, ...scope });
+}
+
+export function getItemForUser(
+  userId: string,
+  id: string,
+): Promise<DetailItem | null> {
+  return findDetailItem({ id, userId });
 }
 
 export function getItemsByType(

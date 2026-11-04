@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
-import { collectionSchema } from "@/lib/collection-schemas";
+import { collectionIdSchema, collectionSchema } from "@/lib/collection-schemas";
 import { FREE_COLLECTION_LIMIT } from "@/lib/plan-limits";
 import { prisma } from "@/lib/prisma";
 import {
@@ -26,7 +26,6 @@ const CREATE_ERROR = "Could not create the collection. Try again.";
 const UPDATE_ERROR = "Could not update the collection. Try again.";
 const DELETE_ERROR = "Could not delete the collection. Try again.";
 const COLLECTION_NOT_FOUND = "Collection not found";
-const collectionIdSchema = z.string().min(1).max(64);
 
 function revalidateListViews() {
   revalidatePath("/dashboard");

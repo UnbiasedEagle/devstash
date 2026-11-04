@@ -2,26 +2,25 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Folder } from "lucide-react";
-import { z } from "zod";
 import CollectionFavoriteButton from "@/components/collections/CollectionFavoriteButton";
 import DeleteCollectionButton from "@/components/collections/DeleteCollectionButton";
 import EditCollectionDialog from "@/components/collections/EditCollectionDialog";
 import ItemCard, { ItemCardSkeleton } from "@/components/items/ItemCard";
-import ItemDetail, { ItemNotFound } from "@/components/items/ItemDetail";
 import {
   ItemDrawerPending,
   ItemDrawerProvider,
 } from "@/components/items/ItemDrawer";
+import OpenItemContent from "@/components/items/OpenItemContent";
 import Pagination from "@/components/items/Pagination";
 import { Skeleton } from "@/components/ui/skeleton";
+import { collectionIdSchema } from "@/lib/collection-schemas";
 import { getCollectionById } from "@/lib/db/collections";
 import { getItemById, getItemsByCollection } from "@/lib/db/items";
 import { getCurrentUserId } from "@/lib/db/user";
+import { parseItemId } from "@/lib/item-schemas";
 import { parsePage } from "@/lib/pagination";
 import { getRequestTime } from "@/lib/relative-time";
-import type { DetailItem } from "@/types/items";
 
-const idSchema = z.string().min(1).max(64);
 const SKELETON_CARD_COUNT = 6;
 
 const gridClass = "grid gap-4 md:grid-cols-2 xl:grid-cols-3";
@@ -50,16 +49,14 @@ async function CollectionContent({
   await connection();
   const { id: rawId } = await params;
   const { page: pageParam, item: itemParam } = await searchParams;
-  const id = idSchema.safeParse(rawId).data;
+  const id = collectionIdSchema.safeParse(rawId).data;
   if (!id) notFound();
 
   const userId = await getCurrentUserId();
   const collection = await getCollectionById(userId, id);
   if (!collection) notFound();
 
-  const openItemId = idSchema.safeParse(
-    Array.isArray(itemParam) ? itemParam[0] : itemParam,
-  ).data;
+  const openItemId = parseItemId(itemParam);
   // Started before the list resolves so the drawer does not wait for the list queries
   const openItemPromise = openItemId
     ? getItemById(userId, openItemId, { collectionId: collection.id })
@@ -146,15 +143,6 @@ async function CollectionContent({
       </div>
     </ItemDrawerProvider>
   );
-}
-
-async function OpenItemContent({
-  itemPromise,
-}: {
-  itemPromise: Promise<DetailItem | null>;
-}) {
-  const item = await itemPromise;
-  return item ? <ItemDetail item={item} /> : <ItemNotFound />;
 }
 
 export default function CollectionPage({

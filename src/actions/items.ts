@@ -2,10 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
-import { createItemSchema, isItemLanguage } from "@/lib/item-schemas";
+import {
+  createItemSchema,
+  isItemLanguage,
+  itemIdSchema,
+} from "@/lib/item-schemas";
 import { FREE_ITEM_LIMIT } from "@/lib/plan-limits";
 import { prisma } from "@/lib/prisma";
 import {
@@ -24,7 +27,6 @@ class FreeLimitError extends Error {}
 
 const GENERIC_ERROR = "Could not create the item. Try again.";
 const ITEM_NOT_FOUND = "Item not found";
-const itemIdSchema = z.string().min(1).max(64);
 
 export async function createItem(
   input: unknown,

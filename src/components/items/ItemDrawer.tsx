@@ -33,13 +33,13 @@ interface ItemDrawerProviderProps {
 }
 
 interface ItemDrawerContextValue {
-  openDrawer: (preview: DrawerPreview) => void;
+  openDrawer: (preview: DrawerPreview, trigger?: HTMLElement) => void;
   preview: DrawerPreview | null;
   getFlags: (id: string, saved: ItemFlags) => ItemFlags;
   toggleFlag: (id: string, flag: keyof ItemFlags, value: boolean) => void;
   setDirty: (dirty: boolean) => void;
   confirmDiscard: (onConfirm: () => void) => void;
-  closeDrawer: () => void;
+  closeDrawer: (options?: { itemRemoved?: boolean }) => void;
 }
 
 interface FlagChange {
@@ -93,6 +93,10 @@ export function ItemDrawerProvider({
     null,
   );
   const dirtyRef = useRef(false);
+  const triggerRef = useRef<{ itemId: string; element: HTMLElement } | null>(
+    null,
+  );
+  const itemRemovedRef = useRef(false);
   // The base state is always empty: once the action settles, the revalidated server data takes over, and a failed action drops the override so the flag reverts
   const [overrides, applyOverride] = useOptimistic<FlagOverrides, FlagChange>(
     {},
@@ -114,7 +118,10 @@ export function ItemDrawerProvider({
     }
   }
 
-  function openDrawer(nextPreview: DrawerPreview) {
+  function openDrawer(nextPreview: DrawerPreview, trigger?: HTMLElement) {
+    triggerRef.current = trigger
+      ? { itemId: nextPreview.id, element: trigger }
+      : null;
     setItemId(nextPreview.id);
     setPreview(nextPreview);
     setOpen(true);
@@ -132,7 +139,8 @@ export function ItemDrawerProvider({
     }
   }
 
-  function closeDrawer() {
+  function closeDrawer(options?: { itemRemoved?: boolean }) {
+    itemRemovedRef.current = options?.itemRemoved ?? false;
     setOpen(false);
     router.replace(closeHref, { scroll: false });
   }
@@ -180,7 +188,27 @@ export function ItemDrawerProvider({
       {children}
       <Sheet open={open} onOpenChange={handleOpenChange}>
         <SheetContent
-          finalFocus={() => document.getElementById(`item-${itemId}`)}
+          finalFocus={() => {
+            const itemRemoved = itemRemovedRef.current;
+            itemRemovedRef.current = false;
+
+            // A deleted item's row is still listed when the drawer closes and only disappears once the refresh lands, so returning focus to it would drop focus to the body
+            if (!itemRemoved) {
+              const trigger = triggerRef.current;
+              // The clicked link is the right place to return to even when the same item is listed twice; a drawer opened from the URL falls back to the item's link by id
+              if (trigger?.itemId === itemId && trigger.element.isConnected) {
+                return trigger.element;
+              }
+              const row =
+                document.getElementById(`item-${itemId}`) ??
+                document.getElementById(`item-pinned-${itemId}`);
+              if (row) return row;
+            }
+
+            const heading = document.querySelector<HTMLElement>("main h1");
+            heading?.setAttribute("tabindex", "-1");
+            return heading;
+          }}
         >
           {itemId !== null && itemId === openItemId ? (
             drawer

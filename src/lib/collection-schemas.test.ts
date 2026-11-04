@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  collectionIdSchema,
   collectionSchema,
   MAX_COLLECTION_NAME_LENGTH,
 } from "@/lib/collection-schemas";
@@ -38,5 +39,13 @@ describe("collectionSchema", () => {
         description: "a".repeat(MAX_DESCRIPTION_LENGTH + 1),
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("collectionIdSchema", () => {
+  it("accepts an id and rejects an empty or oversized one", () => {
+    expect(collectionIdSchema.safeParse("col-1").success).toBe(true);
+    expect(collectionIdSchema.safeParse("").success).toBe(false);
+    expect(collectionIdSchema.safeParse("x".repeat(65)).success).toBe(false);
   });
 });

@@ -26,7 +26,7 @@ export default function ItemLink({ preview, ...props }: ItemLinkProps) {
     <Link
       {...props}
       onClick={(event) => {
-        if (isPlainLeftClick(event)) openDrawer?.(preview);
+        if (isPlainLeftClick(event)) openDrawer?.(preview, event.currentTarget);
       }}
     />
   );

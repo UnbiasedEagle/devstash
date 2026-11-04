@@ -120,3 +120,10 @@ export const createItemSchema = z.discriminatedUnion("type", [
 ]);
 
 export type CreateItemInput = z.infer<typeof createItemSchema>;
+
+export const itemIdSchema = z.string().min(1).max(64);
+
+// The `?item=` search param, which Next hands over as a string, an array when repeated, or nothing
+export function parseItemId(value: string | string[] | undefined) {
+  return itemIdSchema.safeParse(Array.isArray(value) ? value[0] : value).data;
+}

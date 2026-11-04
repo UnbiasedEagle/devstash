@@ -7,6 +7,7 @@ import {
   MAX_TAGS,
   MAX_TITLE_LENGTH,
   MAX_URL_LENGTH,
+  parseItemId,
 } from "@/lib/item-schemas";
 
 const snippet = {
@@ -187,4 +188,18 @@ describe("createItemSchema URL items", () => {
     const long = `https://example.com/${"a".repeat(MAX_URL_LENGTH)}`;
     expect(errorsFor({ ...url, url: long }, "url")).toHaveLength(1);
   });
+});
+
+describe("parseItemId", () => {
+  it("returns the id, taking the first one when the param is repeated", () => {
+    expect(parseItemId("item-1")).toBe("item-1");
+    expect(parseItemId(["item-1", "item-2"])).toBe("item-1");
+  });
+
+  it.each([undefined, "", [], "x".repeat(65)])(
+    "ignores a missing or invalid param %j",
+    (value) => {
+      expect(parseItemId(value)).toBeUndefined();
+    },
+  );
 });

@@ -1,5 +1,5 @@
-import { Pin, Star } from "lucide-react";
-import Link from "next/link";
+import ItemFlagIcons from "@/components/items/ItemFlagIcons";
+import ItemLink from "@/components/items/ItemLink";
 import TagChip from "@/components/items/TagChip";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -7,6 +7,7 @@ import type { DashboardItem } from "@/types/dashboard";
 
 interface ItemRowProps {
   item: DashboardItem;
+  linkId: string;
 }
 
 export function ItemRowSkeleton() {
@@ -28,7 +29,7 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: "UTC",
 });
 
-export default function ItemRow({ item }: ItemRowProps) {
+export default function ItemRow({ item, linkId }: ItemRowProps) {
   const type = item.itemType;
   const Icon = ITEM_TYPE_ICONS[type.icon];
 
@@ -44,25 +45,26 @@ export default function ItemRow({ item }: ItemRowProps) {
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <h3 className="truncate font-mono text-sm font-medium">
-            <Link
-              href={`/items/${type.name.toLowerCase()}?item=${item.id}`}
+            <ItemLink
+              id={linkId}
+              preview={{
+                id: item.id,
+                title: item.title,
+                description: item.description,
+                tags: item.tags,
+                itemType: item.itemType,
+              }}
+              href={`/dashboard?item=${item.id}`}
+              scroll={false}
               className="outline-none after:absolute after:inset-0"
             >
               {item.title}
-            </Link>
+            </ItemLink>
           </h3>
-          {item.isPinned && (
-            <Pin
-              aria-label="Pinned"
-              className="size-3 shrink-0 text-muted-foreground"
-            />
-          )}
-          {item.isFavorite && (
-            <Star
-              aria-label="Favorite"
-              className="size-3 shrink-0 fill-yellow-500 text-yellow-500"
-            />
-          )}
+          <ItemFlagIcons
+            id={item.id}
+            saved={{ isFavorite: item.isFavorite, isPinned: item.isPinned }}
+          />
         </div>
         {item.description && (
           <p className="mt-0.5 truncate text-sm text-muted-foreground">

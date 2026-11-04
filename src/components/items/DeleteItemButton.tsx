@@ -36,7 +36,7 @@ export default function DeleteItemButton({
       }
       setDeleted(true);
       toast.success("Item deleted");
-      closeDrawer();
+      closeDrawer({ itemRemoved: true });
     } catch {
       toast.error("Something went wrong. Try again.");
     } finally {

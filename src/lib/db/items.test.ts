@@ -22,7 +22,11 @@ vi.mock("@/generated/prisma/client", () => ({
   },
 }));
 
-import { getItemById, getItemsByCollection } from "@/lib/db/items";
+import {
+  getItemById,
+  getItemForUser,
+  getItemsByCollection,
+} from "@/lib/db/items";
 
 describe("collection item queries", () => {
   beforeEach(() => {
@@ -72,6 +76,17 @@ describe("collection item queries", () => {
       id: "item-1",
       userId: "user-1",
       collectionId: "col-1",
+    });
+  });
+
+  it("scopes a lookup without a type or collection to the user only", async () => {
+    mocks.findFirst.mockResolvedValue(null);
+
+    await getItemForUser("user-1", "item-1");
+
+    expect(mocks.findFirst.mock.calls[0][0].where).toEqual({
+      id: "item-1",
+      userId: "user-1",
     });
   });
 });

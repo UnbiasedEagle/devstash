@@ -1,25 +1,23 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { z } from "zod";
 import ItemCard, { ItemCardSkeleton } from "@/components/items/ItemCard";
-import ItemDetail, { ItemNotFound } from "@/components/items/ItemDetail";
 import {
   ItemDrawerPending,
   ItemDrawerProvider,
 } from "@/components/items/ItemDrawer";
+import OpenItemContent from "@/components/items/OpenItemContent";
 import Pagination from "@/components/items/Pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getItemTypeBySlug } from "@/lib/db/item-types";
 import { getItemById, getItemsByType } from "@/lib/db/items";
 import { getCurrentUserId } from "@/lib/db/user";
+import { parseItemId } from "@/lib/item-schemas";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 import { parsePage } from "@/lib/pagination";
 import { getRequestTime } from "@/lib/relative-time";
-import type { DetailItem } from "@/types/items";
 
 const SLUG_PATTERN = /^[a-z0-9-]{1,30}$/i;
-const itemIdSchema = z.string().min(1).max(64);
 const SKELETON_CARD_COUNT = 6;
 
 const gridClass = "grid gap-4 md:grid-cols-2 xl:grid-cols-3";
@@ -54,9 +52,7 @@ async function ItemsContent({
   const type = await getItemTypeBySlug(userId, slug);
   if (!type) notFound();
 
-  const openItemId = itemIdSchema.safeParse(
-    Array.isArray(itemParam) ? itemParam[0] : itemParam,
-  ).data;
+  const openItemId = parseItemId(itemParam);
   // Started before the list resolves so the drawer does not wait for the list queries
   const openItemPromise = openItemId
     ? getItemById(userId, openItemId, { itemTypeId: type.id })
@@ -127,15 +123,6 @@ async function ItemsContent({
       </div>
     </ItemDrawerProvider>
   );
-}
-
-async function OpenItemContent({
-  itemPromise,
-}: {
-  itemPromise: Promise<DetailItem | null>;
-}) {
-  const item = await itemPromise;
-  return item ? <ItemDetail item={item} /> : <ItemNotFound />;
 }
 
 export default function ItemsPage({
