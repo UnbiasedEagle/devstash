@@ -9,10 +9,18 @@ interface PaginationProps {
   page: number;
   totalPages: number;
   total: number;
+  params?: Record<string, string>;
 }
 
-function pageHref(basePath: string, page: number) {
-  return page === 1 ? basePath : `${basePath}?page=${page}`;
+function pageHref(
+  basePath: string,
+  page: number,
+  params: Record<string, string>,
+) {
+  const search = new URLSearchParams(params);
+  if (page > 1) search.set("page", String(page));
+  const queryString = search.toString();
+  return queryString ? `${basePath}?${queryString}` : basePath;
 }
 
 function PageLink({
@@ -51,6 +59,7 @@ export default function Pagination({
   page,
   totalPages,
   total,
+  params = {},
 }: PaginationProps) {
   if (totalPages <= 1) return null;
 
@@ -67,7 +76,7 @@ export default function Pagination({
       </p>
       <div className="flex items-center gap-2">
         <PageLink
-          href={pageHref(basePath, page - 1)}
+          href={pageHref(basePath, page - 1, params)}
           disabled={page === 1}
           label="Previous page"
         >
@@ -86,7 +95,7 @@ export default function Pagination({
           </span>
         </span>
         <PageLink
-          href={pageHref(basePath, page + 1)}
+          href={pageHref(basePath, page + 1, params)}
           disabled={page === totalPages}
           label="Next page"
         >

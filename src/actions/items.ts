@@ -106,6 +106,7 @@ export async function createItem(
 
     revalidatePath("/dashboard");
     revalidatePath(`/items/${type.toLowerCase()}`);
+    revalidatePath("/search");
     if (collectionId) {
       revalidatePath("/collections");
       revalidatePath("/collections/[id]", "page");
@@ -160,6 +161,7 @@ async function isCollectionGone(
 function revalidateItemViews() {
   revalidatePath("/dashboard");
   revalidatePath("/items/[type]", "page");
+  revalidatePath("/search");
   revalidatePath("/collections");
   revalidatePath("/collections/[id]", "page");
   revalidatePath("/profile");

@@ -3,6 +3,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { itemTypeSummarySelect } from "@/lib/db/item-types";
 import { ITEMS_PER_PAGE } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
+import { escapeLikePattern, splitSearchWords } from "@/lib/search-schemas";
 import type { DashboardItem } from "@/types/dashboard";
 import type { DetailItem, ItemPage } from "@/types/items";
 
@@ -51,8 +52,6 @@ const detailItemSelect = {
   collection: { select: { id: true, name: true } },
 } satisfies Prisma.ItemSelect;
 
-export type ItemScope = { itemTypeId: string } | { collectionId: string };
-
 async function findDetailItem(
   where: Prisma.ItemWhereInput,
 ): Promise<DetailItem | null> {
@@ -97,9 +96,41 @@ export function getItemsByCollection(
   return getItemPage(userId, { collectionId }, requestedPage);
 }
 
+export function searchItems(
+  userId: string,
+  query: string,
+  requestedPage: number,
+): Promise<ItemPage> {
+  const words = splitSearchWords(query);
+  // An empty AND would match every item
+  if (words.length === 0) {
+    return Promise.resolve({ items: [], total: 0, page: 1, totalPages: 1 });
+  }
+
+  const containsWord = (word: string) =>
+    ({ contains: escapeLikePattern(word), mode: "insensitive" }) as const;
+
+  return getItemPage(
+    userId,
+    {
+      AND: words.map((word) => ({
+        OR: [
+          { title: containsWord(word) },
+          { description: containsWord(word) },
+          { content: containsWord(word) },
+          { url: containsWord(word) },
+          { itemType: { name: containsWord(word) } },
+          { tags: { some: { tag: { name: containsWord(word) } } } },
+        ],
+      })),
+    },
+    requestedPage,
+  );
+}
+
 async function getItemPage(
   userId: string,
-  scope: ItemScope,
+  scope: Prisma.ItemWhereInput,
   requestedPage: number,
 ): Promise<ItemPage> {
   const where = { userId, ...scope };

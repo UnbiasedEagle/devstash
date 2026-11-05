@@ -270,6 +270,7 @@ describe("createItem", () => {
 
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/dashboard");
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/items/snippet");
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/search");
   });
 
   describe("free plan limit", () => {
