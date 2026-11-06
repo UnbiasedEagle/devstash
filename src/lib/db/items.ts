@@ -97,6 +97,14 @@ export function getItemsByCollection(
   return getItemPage(userId, { collectionId }, requestedPage);
 }
 
+export function getItemsByTag(
+  userId: string,
+  tagId: string,
+  requestedPage: number,
+): Promise<ItemPage> {
+  return getItemPage(userId, { tags: { some: { tagId } } }, requestedPage);
+}
+
 export function searchItems(
   userId: string,
   query: string,

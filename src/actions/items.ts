@@ -107,6 +107,8 @@ export async function createItem(
     revalidatePath("/dashboard");
     revalidatePath(`/items/${type.toLowerCase()}`);
     revalidatePath("/search");
+    revalidatePath("/tags");
+    revalidatePath("/tags/[name]", "page");
     if (collectionId) {
       revalidatePath("/collections");
       revalidatePath("/collections/[id]", "page");
@@ -162,6 +164,8 @@ function revalidateItemViews() {
   revalidatePath("/dashboard");
   revalidatePath("/items/[type]", "page");
   revalidatePath("/search");
+  revalidatePath("/tags");
+  revalidatePath("/tags/[name]", "page");
   revalidatePath("/collections");
   revalidatePath("/collections/[id]", "page");
   revalidatePath("/profile");

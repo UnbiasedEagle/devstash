@@ -15,5 +15,6 @@ export const config = {
     "/items/:path*",
     "/collections/:path*",
     "/search/:path*",
+    "/tags/:path*",
   ],
 };

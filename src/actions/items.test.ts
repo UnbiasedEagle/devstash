@@ -271,6 +271,8 @@ describe("createItem", () => {
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/dashboard");
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/items/snippet");
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/search");
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/tags");
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/tags/[name]", "page");
   });
 
   describe("free plan limit", () => {

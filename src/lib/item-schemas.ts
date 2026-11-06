@@ -76,15 +76,16 @@ const description = z
   )
   .optional();
 
+// Also used to normalize the tag name in the /tags/[name] route so both sides match
+export const tagNameSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(1, "Tags can't be empty")
+  .max(MAX_TAG_LENGTH, `Tags must be at most ${MAX_TAG_LENGTH} characters`);
+
 const tags = z
-  .array(
-    z
-      .string()
-      .trim()
-      .toLowerCase()
-      .min(1, "Tags can't be empty")
-      .max(MAX_TAG_LENGTH, `Tags must be at most ${MAX_TAG_LENGTH} characters`),
-  )
+  .array(tagNameSchema)
   .max(MAX_TAGS, `Add at most ${MAX_TAGS} tags`)
   .refine(
     (values) => new Set(values).size === values.length,

@@ -26,6 +26,7 @@ import {
   getItemById,
   getItemForUser,
   getItemsByCollection,
+  getItemsByTag,
   searchItems,
 } from "@/lib/db/items";
 
@@ -130,6 +131,16 @@ describe("collection item queries", () => {
       userId: "user-1",
       collectionId: "col-1",
     });
+  });
+
+  it("scopes the tag list to the user and the tag", async () => {
+    mocks.count.mockResolvedValue(0);
+
+    await getItemsByTag("user-1", "tag-1", 1);
+
+    const where = { userId: "user-1", tags: { some: { tagId: "tag-1" } } };
+    expect(mocks.count).toHaveBeenCalledWith({ where });
+    expect(mocks.findMany.mock.calls[0][0].where).toEqual(where);
   });
 
   it("clamps a page past the end to the last page", async () => {

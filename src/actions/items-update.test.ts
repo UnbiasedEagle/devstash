@@ -307,6 +307,8 @@ describe("updateItem", () => {
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/dashboard");
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/items/[type]", "page");
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/search");
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/tags");
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/tags/[name]", "page");
   });
 
   it("retries when two edits race to insert the same new tag", async () => {
