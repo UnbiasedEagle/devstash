@@ -13,7 +13,65 @@ const redisMock = vi.hoisted(() => {
 
 vi.mock("@/lib/redis", () => ({ redis: { multi: redisMock.multi } }));
 
-import { consumeMutationQuota } from "@/lib/rate-limit-actions";
+import {
+  consumeMutationQuota,
+  consumeSearchQuota,
+} from "@/lib/rate-limit-actions";
+
+describe("consumeSearchQuota", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    redisMock.chain.incr.mockReturnValue(redisMock.chain);
+    redisMock.chain.expire.mockReturnValue(redisMock.chain);
+  });
+
+  it("allows up to the 300th search in the window and blocks the 301st", async () => {
+    redisMock.chain.exec.mockResolvedValueOnce([300, 0]);
+    expect(await consumeSearchQuota("user-1")).toBe(true);
+
+    redisMock.chain.exec.mockResolvedValueOnce([301, 0]);
+    expect(await consumeSearchQuota("user-1")).toBe(false);
+  });
+
+  it("counts separately from the mutation quota", async () => {
+    redisMock.chain.exec.mockResolvedValueOnce([1, 1]);
+    await consumeSearchQuota("user-42");
+
+    expect(redisMock.chain.incr).toHaveBeenCalledWith("search-quota:user-42");
+  });
+
+  it("fails open when Redis is unavailable", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    redisMock.chain.exec.mockRejectedValueOnce(new Error("redis down"));
+
+    expect(await consumeSearchQuota("user-1")).toBe(true);
+    consoleError.mockRestore();
+  });
+
+  it("logs a storage outage at most once a minute", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const clock = vi.spyOn(Date, "now");
+    const start = Date.now() + 10 * 60_000;
+    redisMock.chain.exec.mockRejectedValue(new Error("redis down"));
+
+    clock.mockReturnValue(start);
+    await consumeSearchQuota("user-1");
+    await consumeSearchQuota("user-1");
+    expect(consoleError).toHaveBeenCalledTimes(1);
+
+    clock.mockReturnValue(start + 61_000);
+    await consumeSearchQuota("user-1");
+    expect(consoleError).toHaveBeenCalledTimes(2);
+
+    clock.mockRestore();
+    consoleError.mockRestore();
+    redisMock.chain.exec.mockReset();
+  });
+});
 
 describe("consumeMutationQuota", () => {
   beforeEach(() => {

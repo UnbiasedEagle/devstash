@@ -14,7 +14,7 @@ Make search instant, like the Next.js docs search: `Cmd/Ctrl + K` (or the top ba
 - Ignore out-of-order responses so a slow request never replaces a newer one
 - Arrow keys move the selection, `Enter` opens the selected item in the drawer on the current page (`?item=<id>`), `Escape` closes the popup
 - A final row, "See all results for ...", goes to `/search?q=`
-- Show recent empty, loading, no-results and error states, and return focus to the previous element on close
+- Show empty, loading, no-results and error states, and return focus to the previous element on close
 - Works on mobile with a touch-sized trigger and input. Accessible: `role="combobox"` with `aria-activedescendant` on the input and `role="listbox"` on the results
 - Verify in the browser (open and close, shortcuts, typing, highlighting, grouping, keyboard selection, drawer opens from the dashboard, items and collection pages, fast typing shows only the latest results, empty and error states, mobile layout), then run `npm run build`
 

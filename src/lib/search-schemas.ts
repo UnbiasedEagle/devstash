@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const MAX_SEARCH_LENGTH = 100;
+export const QUICK_SEARCH_LIMIT = 8;
 
 const searchQuerySchema = z.string().trim().max(MAX_SEARCH_LENGTH);
 

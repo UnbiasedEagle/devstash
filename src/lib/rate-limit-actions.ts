@@ -3,22 +3,61 @@ import { redis } from "@/lib/redis";
 
 const MUTATION_LIMIT = 30;
 const MUTATION_WINDOW_SECONDS = 60;
+const SEARCH_LIMIT = 300;
+const SEARCH_WINDOW_SECONDS = 60;
 
 export const MUTATION_LIMIT_MESSAGE = "Too many changes, try again in a minute";
+export const SEARCH_LIMIT_MESSAGE = "Too many searches, try again in a minute";
 
-// Shared by every item create, update and delete so one user can't write in a tight loop
-export async function consumeMutationQuota(userId: string): Promise<boolean> {
-  const key = `mutation-quota:${userId}`;
+const OUTAGE_LOG_INTERVAL_MS = 60_000;
+const lastOutageLogAt = new Map<string, number>();
+
+// Search checks the quota on every keystroke, so an outage would otherwise flood the logs
+function logStorageOutage(prefix: string, error: unknown) {
+  const now = Date.now();
+  const last = lastOutageLogAt.get(prefix);
+  if (last !== undefined && now - last < OUTAGE_LOG_INTERVAL_MS) return;
+  lastOutageLogAt.set(prefix, now);
+  console.error(`${prefix} storage unavailable, allowing request`, error);
+}
+
+async function consumeQuota(
+  prefix: string,
+  userId: string,
+  limit: number,
+  windowSeconds: number,
+): Promise<boolean> {
+  const key = `${prefix}:${userId}`;
   try {
     const [count] = await redis
       .multi()
       .incr(key)
-      .expire(key, MUTATION_WINDOW_SECONDS, "NX")
+      .expire(key, windowSeconds, "NX")
       .exec<[number, number]>();
-    return count <= MUTATION_LIMIT;
+    return count <= limit;
   } catch (error) {
-    // The plan limit is enforced in the database transaction, so a Redis outage must not block saving
-    console.error("Mutation quota storage unavailable, allowing change", error);
+    // The plan limit and data scoping live in the database, so a Redis outage must not block the user
+    logStorageOutage(prefix, error);
     return true;
   }
+}
+
+// Shared by every item create, update and delete so one user can't write in a tight loop
+export function consumeMutationQuota(userId: string): Promise<boolean> {
+  return consumeQuota(
+    "mutation-quota",
+    userId,
+    MUTATION_LIMIT,
+    MUTATION_WINDOW_SECONDS,
+  );
+}
+
+// Separate from the mutation quota: typing in the search popup sends many reads in a row
+export function consumeSearchQuota(userId: string): Promise<boolean> {
+  return consumeQuota(
+    "search-quota",
+    userId,
+    SEARCH_LIMIT,
+    SEARCH_WINDOW_SECONDS,
+  );
 }
