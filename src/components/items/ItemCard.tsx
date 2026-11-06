@@ -75,7 +75,7 @@ export default function ItemCard({ item, now, href }: ItemCardProps) {
   const hiddenTagCount = item.tags.length - visibleTags.length;
 
   return (
-    <article className="relative flex flex-col gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:bg-accent/40 has-[a:focus-visible]:ring-3 has-[a:focus-visible]:ring-ring/50">
+    <article className="relative flex flex-col gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:bg-accent/40 has-[h2_a:focus-visible]:ring-3 has-[h2_a:focus-visible]:ring-ring/50">
       <header className="flex items-center gap-3">
         <span
           aria-hidden
@@ -119,7 +119,7 @@ export default function ItemCard({ item, now, href }: ItemCardProps) {
       <footer className="mt-auto flex items-center justify-between gap-3 pt-1">
         <ul className="flex min-w-0 flex-wrap gap-1.5">
           {visibleTags.map((tag) => (
-            <TagChip key={tag} tag={tag} />
+            <TagChip key={tag} tag={tag} linked />
           ))}
           {hiddenTagCount > 0 && (
             <li className="rounded-md px-1 py-0.5 text-xs text-muted-foreground">

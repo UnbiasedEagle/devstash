@@ -33,7 +33,7 @@ export default function ItemDrawerHeader({
       {tags.length > 0 && (
         <ul className="flex flex-wrap gap-1.5">
           {tags.map((tag) => (
-            <TagChip key={tag} tag={tag} />
+            <TagChip key={tag} tag={tag} linked />
           ))}
         </ul>
       )}

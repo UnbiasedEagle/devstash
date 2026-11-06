@@ -22,7 +22,7 @@ export default function ItemDrawerSkeleton({
         <Skeleton className="size-8" />
         <Skeleton className="size-8" />
         {showEdit && <Skeleton className="h-7 w-16" />}
-        <Skeleton className="h-7 w-[4.5rem]" />
+        <Skeleton className="h-7 w-18" />
       </div>
       {preview ? (
         <ItemDrawerHeader {...preview} />
