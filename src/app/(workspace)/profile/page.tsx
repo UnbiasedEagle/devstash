@@ -7,6 +7,10 @@ import { ChangePasswordForm } from "@/components/profile/ChangePasswordForm";
 import { CheckoutToast } from "@/components/profile/CheckoutToast";
 import { DeleteAccountSection } from "@/components/profile/DeleteAccountSection";
 import { EditNameForm } from "@/components/profile/EditNameForm";
+import {
+  ExportCard,
+  ExportCardSkeleton,
+} from "@/components/profile/ExportCard";
 import { GitHubOnlyNote } from "@/components/profile/GitHubOnlyNote";
 import { PlanCard, PlanCardSkeleton } from "@/components/profile/PlanCard";
 import { SettingsSkeleton } from "@/components/profile/SettingsSkeleton";
@@ -33,6 +37,13 @@ async function PlanSection() {
   const user = await getCurrentUser();
   const profile = await getProfile(user.id);
   return <PlanCard isPro={profile.isPro} />;
+}
+
+async function ExportSection() {
+  await connection();
+  const user = await getCurrentUser();
+  const profile = await getProfile(user.id);
+  return <ExportCard isPro={profile.isPro} />;
 }
 
 async function SettingsSection() {
@@ -69,6 +80,9 @@ export default function ProfilePage() {
       </Suspense>
       <Suspense fallback={<PlanCardSkeleton />}>
         <PlanSection />
+      </Suspense>
+      <Suspense fallback={<ExportCardSkeleton />}>
+        <ExportSection />
       </Suspense>
       <Suspense fallback={<SettingsSkeleton />}>
         <SettingsSection />

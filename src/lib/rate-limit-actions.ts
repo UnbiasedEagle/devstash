@@ -9,11 +9,14 @@ const UPLOAD_LIMIT = 10;
 const UPLOAD_WINDOW_SECONDS = 60;
 const DOWNLOAD_LIMIT = 60;
 const DOWNLOAD_WINDOW_SECONDS = 60;
+const EXPORT_LIMIT = 3;
+const EXPORT_WINDOW_SECONDS = 60;
 
 export const MUTATION_LIMIT_MESSAGE = "Too many changes, try again in a minute";
 export const UPLOAD_LIMIT_MESSAGE = "Too many uploads, try again in a minute";
 export const DOWNLOAD_LIMIT_MESSAGE =
   "Too many downloads, try again in a minute";
+export const EXPORT_LIMIT_MESSAGE = "Too many exports, try again in a minute";
 export const SEARCH_LIMIT_MESSAGE = "Too many searches, try again in a minute";
 
 const OUTAGE_LOG_INTERVAL_MS = 60_000;
@@ -66,6 +69,16 @@ export function consumeDownloadQuota(userId: string): Promise<boolean> {
     userId,
     DOWNLOAD_LIMIT,
     DOWNLOAD_WINDOW_SECONDS,
+  );
+}
+
+// Each export reads the user's whole stash, so it is far tighter than the other limits
+export function consumeExportQuota(userId: string): Promise<boolean> {
+  return consumeQuota(
+    "export-quota",
+    userId,
+    EXPORT_LIMIT,
+    EXPORT_WINDOW_SECONDS,
   );
 }
 
