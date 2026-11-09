@@ -2,7 +2,7 @@
 
 import { useRef, type KeyboardEvent } from "react";
 import ProBadge from "@/components/dashboard/ProBadge";
-import { isCreatableItemType } from "@/lib/item-schemas";
+import { isNewItemType } from "@/lib/item-schemas";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 import { cn } from "@/lib/utils";
 import type { ItemTypeSummary } from "@/types/dashboard";
@@ -19,6 +19,7 @@ interface ItemTypeSelectorProps {
   value: string;
   onChange: (typeName: string) => void;
   disabled?: boolean;
+  isPro: boolean;
 }
 
 export default function ItemTypeSelector({
@@ -26,6 +27,7 @@ export default function ItemTypeSelector({
   value,
   onChange,
   disabled,
+  isPro,
 }: ItemTypeSelectorProps) {
   const groupRef = useRef<HTMLDivElement>(null);
 
@@ -55,8 +57,10 @@ export default function ItemTypeSelector({
     >
       {itemTypes.map((type) => {
         const Icon = ITEM_TYPE_ICONS[type.icon];
-        const isCreatable = isCreatableItemType(type.name);
+        const isCreatable = isNewItemType(type.name);
         const isSelected = value === type.name;
+        // Files are Pro, so free users see the badge; images are free and have none
+        const needsPro = type.name === "File" && !isPro;
 
         return (
           <button
@@ -80,7 +84,7 @@ export default function ItemTypeSelector({
               />
             )}
             <span className="min-w-0 flex-1 truncate">{type.name}</span>
-            {!isCreatable && <ProBadge />}
+            {needsPro && <ProBadge />}
           </button>
         );
       })}

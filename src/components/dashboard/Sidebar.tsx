@@ -19,7 +19,7 @@ import { getInitials } from "@/lib/user-initials";
 
 const FAVORITE_COLLECTION_LIMIT = 10;
 const RECENT_COLLECTION_LIMIT = 4;
-const PRO_TYPE_NAMES = ["file", "image"];
+const PRO_TYPE_NAMES = ["file"];
 
 function SectionLabel({ children }: { children: string }) {
   return (

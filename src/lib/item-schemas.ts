@@ -14,6 +14,25 @@ export function isCreatableItemType(name: string): name is CreatableItemType {
   return (CREATABLE_ITEM_TYPES as readonly string[]).includes(name);
 }
 
+// Items made from an uploaded file. They can be created but not edited with the text form
+export const UPLOAD_ITEM_TYPES = ["File", "Image"] as const;
+
+export type UploadItemType = (typeof UPLOAD_ITEM_TYPES)[number];
+
+export type NewItemType = CreatableItemType | UploadItemType;
+
+export function isUploadItemType(name: string): name is UploadItemType {
+  return (UPLOAD_ITEM_TYPES as readonly string[]).includes(name);
+}
+
+export function isNewItemType(name: string): name is NewItemType {
+  return isCreatableItemType(name) || isUploadItemType(name);
+}
+
+export function uploadKindFor(type: UploadItemType): "image" | "file" {
+  return type === "Image" ? "image" : "file";
+}
+
 export const ITEM_LANGUAGES = [
   "typescript",
   "javascript",
@@ -114,12 +133,31 @@ const collectionId = z.string().min(1).max(64).optional();
 
 const common = { title, description, tags, collectionId };
 
+// What every item form fills in, before a file has been chosen or uploaded
+export const itemMetaSchema = z.object(common);
+
+// The shape of a key from requestUpload; whose it is gets checked against the signed-in user on the server
+const PENDING_KEY_PATTERN = /^pending\/[^/]+\/[0-9a-f-]{36}$/i;
+
+const fileFields = {
+  fileKey: z
+    .string()
+    .max(200)
+    .regex(PENDING_KEY_PATTERN, "Upload the file again"),
+  fileName: z.string().trim().min(1).max(255),
+  fileSize: z.number().int().positive(),
+  // May be empty on purpose: some systems send no type, and the server settles the type from the extension and the stored object
+  fileMimeType: z.string().max(127),
+};
+
 export const createItemSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("Snippet"), ...common, content, language }),
   z.object({ type: z.literal("Command"), ...common, content, language }),
   z.object({ type: z.literal("Prompt"), ...common, content }),
   z.object({ type: z.literal("Note"), ...common, content }),
   z.object({ type: z.literal("URL"), ...common, url }),
+  z.object({ type: z.literal("File"), ...common, ...fileFields }),
+  z.object({ type: z.literal("Image"), ...common, ...fileFields }),
 ]);
 
 export type CreateItemInput = z.infer<typeof createItemSchema>;

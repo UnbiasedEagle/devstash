@@ -44,6 +44,10 @@ vi.mock("@/generated/prisma/client", () => ({
     TransactionIsolationLevel: { Serializable: "Serializable" },
   },
 }));
+vi.mock("@/lib/uploaded-files", () => ({
+  claimUploadedFile: vi.fn(),
+  discardStoredFile: vi.fn(),
+}));
 vi.mock("@/lib/rate-limit-actions", () => ({
   consumeMutationQuota: mocks.consumeMutationQuota,
   MUTATION_LIMIT_MESSAGE: "Too many changes, try again in a minute",
@@ -86,6 +90,34 @@ describe("updateItem", () => {
     expect(result.success).toBe(false);
     expect(mocks.update).not.toHaveBeenCalled();
   });
+
+  it.each(["File", "Image"])(
+    "doesn't edit a %s item with the text form, before the rate limit or database",
+    async (type) => {
+      mocks.findFirst.mockResolvedValue({
+        itemType: { name: type },
+        tags: [],
+      });
+
+      const result = await updateItem("item-1", {
+        type,
+        title: "Renamed",
+        tags: [],
+        fileKey: "pending/user-1/3f2b8c1e-9a4d-4e6f-8b1a-2c3d4e5f6a7b",
+        fileName: "a.png",
+        fileSize: 10,
+        fileMimeType: "image/png",
+      });
+
+      expect(result).toEqual({
+        success: false,
+        error: "Files and images can't be edited yet",
+      });
+      expect(mocks.consumeMutationQuota).not.toHaveBeenCalled();
+      expect(mocks.findFirst).not.toHaveBeenCalled();
+      expect(mocks.update).not.toHaveBeenCalled();
+    },
+  );
 
   it("rejects invalid input before the rate limit or database", async () => {
     const result = await updateItem("item-1", { ...validSnippet, title: " " });

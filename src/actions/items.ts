@@ -4,10 +4,13 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { Prisma } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
+import { getIsPro } from "@/lib/db/user";
 import {
   createItemSchema,
   isItemLanguage,
+  isUploadItemType,
   itemIdSchema,
+  uploadKindFor,
 } from "@/lib/item-schemas";
 import { FREE_ITEM_LIMIT } from "@/lib/plan-limits";
 import { prisma } from "@/lib/prisma";
@@ -15,6 +18,11 @@ import {
   consumeMutationQuota,
   MUTATION_LIMIT_MESSAGE,
 } from "@/lib/rate-limit-actions";
+import {
+  claimUploadedFile,
+  discardStoredFile,
+  type StoredFile,
+} from "@/lib/uploaded-files";
 import { withWriteConflictRetry } from "@/lib/write-conflict-retry";
 import type { ActionResult } from "@/types/actions";
 
@@ -27,8 +35,18 @@ class FreeLimitError extends Error {}
 class CollectionNotFoundError extends Error {}
 
 const GENERIC_ERROR = "Could not create the item. Try again.";
+const PRO_REQUIRED = "File uploads are part of Pro. Upgrade to upload files.";
+const UPLOADS_NOT_EDITABLE = "Files and images can't be edited yet";
 const ITEM_NOT_FOUND = "Item not found";
 const COLLECTION_NOT_FOUND = "Collection not found";
+
+function freeLimitResult(): ActionResult<never> {
+  return {
+    success: false,
+    error: `The free plan is limited to ${FREE_ITEM_LIMIT} items. Upgrade to Pro to add more.`,
+    code: "free_limit",
+  };
+}
 
 export async function createItem(
   input: unknown,
@@ -49,12 +67,42 @@ export async function createItem(
     return { success: false, error: MUTATION_LIMIT_MESSAGE };
   }
 
+  // Set once the file has been moved into place, so any later failure can take it out again
+  let storedFile: StoredFile | undefined;
+
   try {
     const itemType = await prisma.itemType.findFirst({
       where: { name: type, userId: null },
       select: { id: true },
     });
     if (!itemType) return { success: false, error: GENERIC_ERROR };
+
+    const upload = parsed.data;
+    if (upload.type === "File" || upload.type === "Image") {
+      const kind = uploadKindFor(upload.type);
+      // Images are free and files are Pro; requestUpload checks this too, but only the save is what counts
+      const isPro = await getIsPro(userId);
+      if (kind === "file" && !isPro) {
+        return { success: false, error: PRO_REQUIRED, code: "pro_required" };
+      }
+      // Claiming a file writes to storage, so a user who is already at the limit is turned away first. The transaction below is still the check that counts
+      if (
+        !isPro &&
+        (await prisma.item.count({ where: { userId } })) >= FREE_ITEM_LIMIT
+      ) {
+        return freeLimitResult();
+      }
+      const claim = await claimUploadedFile({
+        userId,
+        kind,
+        fileKey: upload.fileKey,
+        fileName: upload.fileName,
+        fileSize: upload.fileSize,
+        fileMimeType: upload.fileMimeType,
+      });
+      if (!claim.ok) return { success: false, error: claim.error };
+      storedFile = claim.file;
+    }
 
     const item = await withWriteConflictRetry(() =>
       prisma.$transaction(
@@ -79,10 +127,18 @@ export async function createItem(
             data: {
               title,
               description: description || null,
-              contentType: type === "URL" ? "URL" : "TEXT",
+              contentType: storedFile
+                ? "FILE"
+                : type === "URL"
+                  ? "URL"
+                  : "TEXT",
               content: "content" in parsed.data ? parsed.data.content : null,
               url: "url" in parsed.data ? parsed.data.url : null,
               language: "language" in parsed.data ? parsed.data.language : null,
+              fileKey: storedFile?.key ?? null,
+              fileName: storedFile?.fileName ?? null,
+              fileSize: storedFile?.size ?? null,
+              fileMimeType: storedFile?.mimeType ?? null,
               userId,
               itemTypeId: itemType.id,
               collectionId: collectionId ?? null,
@@ -115,13 +171,8 @@ export async function createItem(
     }
     return { success: true, data: { id: item.id, type } };
   } catch (error) {
-    if (error instanceof FreeLimitError) {
-      return {
-        success: false,
-        error: `The free plan is limited to ${FREE_ITEM_LIMIT} items. Upgrade to Pro to add more.`,
-        code: "free_limit",
-      };
-    }
+    if (storedFile) await discardStoredFile(storedFile.key);
+    if (error instanceof FreeLimitError) return freeLimitResult();
     if (
       error instanceof CollectionNotFoundError ||
       (await isCollectionGone(error, userId, collectionId))
@@ -189,6 +240,9 @@ export async function updateItem(
     return { success: false, error: "Check the form and try again" };
   }
   const { type, title, description, tags, collectionId } = parsed.data;
+  if (isUploadItemType(type)) {
+    return { success: false, error: UPLOADS_NOT_EDITABLE };
+  }
 
   if (!(await consumeMutationQuota(userId))) {
     return { success: false, error: MUTATION_LIMIT_MESSAGE };

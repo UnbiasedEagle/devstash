@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
 import { z } from "zod";
+import FileField from "@/components/items/FileField";
 import MarkdownEditor from "@/components/items/MarkdownEditor";
 import TagInput from "@/components/items/TagInput";
 import { Input } from "@/components/ui/input";
@@ -10,10 +11,15 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   createItemSchema,
+  isUploadItemType,
+  itemMetaSchema,
   ITEM_LANGUAGES,
-  type CreatableItemType,
+  uploadKindFor,
   type CreateItemInput,
+  type NewItemType,
+  type UploadItemType,
 } from "@/lib/item-schemas";
+import { validateChosenFile } from "@/lib/upload-client";
 import type { CollectionOption } from "@/types/items";
 
 const CodeEditor = dynamic(() => import("@/components/items/CodeEditor"), {
@@ -22,12 +28,14 @@ const CodeEditor = dynamic(() => import("@/components/items/CodeEditor"), {
 });
 
 export interface FormValues {
-  type: CreatableItemType;
+  type: NewItemType;
   title: string;
   description: string;
   content: string;
   language: string;
   url: string;
+  // The file chosen for a File or Image item, not yet uploaded
+  file: File | null;
   tags: string[];
   collectionId: string;
 }
@@ -35,7 +43,14 @@ export interface FormValues {
 export type FormErrors = Partial<Record<string, string[]>>;
 
 const CODE_TYPES = ["Snippet", "Command"];
-const FIELD_ORDER = ["title", "description", "url", "content", "tags"] as const;
+const FIELD_ORDER = [
+  "file",
+  "title",
+  "description",
+  "url",
+  "content",
+  "tags",
+] as const;
 const SELECT_CLASS =
   "h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30 dark:*:bg-popover";
 
@@ -72,8 +87,56 @@ export function validateItemForm(values: FormValues): FormValidation {
   return { errors };
 }
 
+interface UploadFormData {
+  type: UploadItemType;
+  meta: z.infer<typeof itemMetaSchema>;
+  file: File;
+}
+
+type UploadFormValidation =
+  | { data: UploadFormData; errors?: undefined }
+  | { errors: FormErrors; data?: undefined };
+
+// A File or Image item is checked in two steps: the file against the shared rules here, and the item itself on the server once the file is uploaded
+export function validateUploadItemForm(
+  values: FormValues,
+): UploadFormValidation {
+  if (!isUploadItemType(values.type)) return { errors: {} };
+
+  const parsed = itemMetaSchema.safeParse({
+    title: values.title,
+    description: values.description || undefined,
+    tags: values.tags,
+    collectionId: values.collectionId || undefined,
+  });
+  const errors: FormErrors = parsed.success
+    ? {}
+    : z.flattenError(parsed.error).fieldErrors;
+
+  if (!values.file) {
+    errors.file = ["Choose a file to upload"];
+  } else {
+    const fileError = validateChosenFile(
+      uploadKindFor(values.type),
+      values.file,
+    );
+    if (fileError) errors.file = [fileError];
+  }
+
+  const firstInvalid = FIELD_ORDER.find((name) => errors[name]);
+  if (firstInvalid) {
+    document.getElementById(firstInvalid)?.focus();
+    return { errors };
+  }
+  if (!parsed.success || !values.file) return { errors };
+  return {
+    data: { type: values.type, meta: parsed.data, file: values.file },
+  };
+}
+
 export function isItemFormDirty(values: FormValues, initial: FormValues) {
   return (
+    values.file !== initial.file ||
     values.title.trim() !== initial.title.trim() ||
     values.description.trim() !== initial.description.trim() ||
     values.content.trim() !== initial.content.trim() ||
@@ -113,6 +176,10 @@ interface ItemFormFieldsProps {
   errors: FormErrors;
   collections: CollectionOption[];
   onChange: <K extends keyof FormValues>(key: K, value: FormValues[K]) => void;
+  // Only the new item dialog creates File and Image items, so only it passes these
+  onFileChange?: (file: File | null) => void;
+  uploadProgress?: number | null;
+  disabled?: boolean;
 }
 
 export default function ItemFormFields({
@@ -120,7 +187,11 @@ export default function ItemFormFields({
   errors,
   collections,
   onChange,
+  onFileChange,
+  uploadProgress = null,
+  disabled,
 }: ItemFormFieldsProps) {
+  const uploadType = isUploadItemType(values.type) ? values.type : null;
   const isUrl = values.type === "URL";
   const isCode = CODE_TYPES.includes(values.type);
 
@@ -142,6 +213,19 @@ export default function ItemFormFields({
 
   return (
     <>
+      {/* Only a form that can take the file shows the field, so the edit form can never end up with one that does nothing */}
+      {uploadType && onFileChange && (
+        <FileField
+          id="file"
+          kind={uploadKindFor(uploadType)}
+          file={values.file}
+          error={describe("file")}
+          disabled={disabled}
+          progress={uploadProgress}
+          onChange={(file) => onFileChange?.(file)}
+        />
+      )}
+
       <Field id="title" label="Title" error={describe("title")}>
         <Input
           id="title"
@@ -170,7 +254,7 @@ export default function ItemFormFields({
         />
       </Field>
 
-      {isUrl ? (
+      {uploadType ? null : isUrl ? (
         <Field id="url" label="URL" error={describe("url")}>
           <Input
             id="url"

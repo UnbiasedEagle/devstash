@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   createItemSchema,
+  isNewItemType,
+  isUploadItemType,
+  itemMetaSchema,
   MAX_CONTENT_LENGTH,
   MAX_DESCRIPTION_LENGTH,
   MAX_TAG_LENGTH,
@@ -8,6 +11,7 @@ import {
   MAX_TITLE_LENGTH,
   MAX_URL_LENGTH,
   parseItemId,
+  uploadKindFor,
 } from "@/lib/item-schemas";
 
 const snippet = {
@@ -214,4 +218,111 @@ describe("parseItemId", () => {
       expect(parseItemId(value)).toBeUndefined();
     },
   );
+});
+
+describe("File and Image items", () => {
+  const key = "pending/user-1/3f2b8c1e-9a4d-4e6f-8b1a-2c3d4e5f6a7b";
+  const image = {
+    type: "Image",
+    title: "Screenshot",
+    tags: [],
+    fileKey: key,
+    fileName: "shot.png",
+    fileSize: 2048,
+    fileMimeType: "image/png",
+  };
+
+  it.each(["File", "Image"])("accepts a complete %s item", (type) => {
+    expect(createItemSchema.safeParse({ ...image, type }).success).toBe(true);
+  });
+
+  it.each(["fileKey", "fileName", "fileSize", "fileMimeType"])(
+    "requires %s",
+    (field) => {
+      const input: Record<string, unknown> = { ...image };
+      delete input[field];
+
+      expect(createItemSchema.safeParse(input).success).toBe(false);
+    },
+  );
+
+  it.each([
+    [
+      "a key already moved to files",
+      "files/user-1/3f2b8c1e-9a4d-4e6f-8b1a-2c3d4e5f6a7b",
+    ],
+    [
+      "a different folder",
+      "uploads/user-1/3f2b8c1e-9a4d-4e6f-8b1a-2c3d4e5f6a7b",
+    ],
+    ["an id that isn't a UUID", "pending/user-1/photo.png"],
+    ["an extra segment", `${key}/extra`],
+    [
+      "a path traversal",
+      "pending/../files/3f2b8c1e-9a4d-4e6f-8b1a-2c3d4e5f6a7b",
+    ],
+    ["a missing user segment", "pending/3f2b8c1e-9a4d-4e6f-8b1a-2c3d4e5f6a7b"],
+    ["an empty key", ""],
+  ])("rejects %s as the file key", (_label, fileKey) => {
+    expect(createItemSchema.safeParse({ ...image, fileKey }).success).toBe(
+      false,
+    );
+  });
+
+  it.each([0, -1, 1.5, "10"])("rejects a file size of %j", (fileSize) => {
+    expect(createItemSchema.safeParse({ ...image, fileSize }).success).toBe(
+      false,
+    );
+  });
+
+  it("still applies the shared title and tag rules", () => {
+    expect(createItemSchema.safeParse({ ...image, title: "  " }).success).toBe(
+      false,
+    );
+    expect(
+      createItemSchema.safeParse({
+        ...image,
+        tags: Array.from({ length: MAX_TAGS + 1 }, (_, index) => `t${index}`),
+      }).success,
+    ).toBe(false);
+  });
+});
+
+describe("itemMetaSchema", () => {
+  it("checks what every item form fills in without any content or file", () => {
+    expect(
+      itemMetaSchema.safeParse({ title: "Report", tags: ["a"] }).success,
+    ).toBe(true);
+    expect(itemMetaSchema.safeParse({ title: " ", tags: [] }).success).toBe(
+      false,
+    );
+  });
+});
+
+describe("upload item types", () => {
+  it("knows which types are made from an uploaded file", () => {
+    expect(isUploadItemType("File")).toBe(true);
+    expect(isUploadItemType("Image")).toBe(true);
+    expect(isUploadItemType("Snippet")).toBe(false);
+  });
+
+  it("offers every type in the new item dialog", () => {
+    for (const name of [
+      "Snippet",
+      "Prompt",
+      "Command",
+      "Note",
+      "URL",
+      "File",
+      "Image",
+    ]) {
+      expect(isNewItemType(name)).toBe(true);
+    }
+    expect(isNewItemType("Custom")).toBe(false);
+  });
+
+  it("maps File and Image to their upload kinds", () => {
+    expect(uploadKindFor("Image")).toBe("image");
+    expect(uploadKindFor("File")).toBe("file");
+  });
 });

@@ -3,7 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { getIsPro } from "@/lib/db/user";
 import {
   consumeUploadQuota,
   UPLOAD_LIMIT_MESSAGE,
@@ -50,14 +50,8 @@ export async function requestUpload(
 
   try {
     // Images are free; every other file is part of Pro, which is checked here and again when the item is saved
-    if (request.kind === "file") {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { isPro: true },
-      });
-      if (!user?.isPro) {
-        return { success: false, error: PRO_REQUIRED, code: "pro_required" };
-      }
+    if (request.kind === "file" && !(await getIsPro(userId))) {
+      return { success: false, error: PRO_REQUIRED, code: "pro_required" };
     }
 
     const key = pendingKey(userId, randomUUID());

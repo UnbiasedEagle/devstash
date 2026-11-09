@@ -4,7 +4,7 @@ import NewItemDialog from "@/components/items/NewItemDialog";
 import { Button } from "@/components/ui/button";
 import { getCollectionOptions } from "@/lib/db/collections";
 import { getSystemItemTypes } from "@/lib/db/item-types";
-import { getCurrentUserId } from "@/lib/db/user";
+import { getCurrentUserId, getIsPro } from "@/lib/db/user";
 
 export function NewItemButtonFallback() {
   return (
@@ -21,9 +21,17 @@ export function NewItemButtonFallback() {
 
 export default async function NewItemButton() {
   await connection();
-  const [itemTypes, collections] = await Promise.all([
+  const userId = await getCurrentUserId();
+  const [itemTypes, collections, isPro] = await Promise.all([
     getSystemItemTypes(),
-    getCurrentUserId().then(getCollectionOptions),
+    getCollectionOptions(userId),
+    getIsPro(userId),
   ]);
-  return <NewItemDialog itemTypes={itemTypes} collections={collections} />;
+  return (
+    <NewItemDialog
+      itemTypes={itemTypes}
+      collections={collections}
+      isPro={isPro}
+    />
+  );
 }

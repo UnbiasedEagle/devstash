@@ -20,6 +20,10 @@ const mocks = vi.hoisted(() => {
     consumeMutationQuota: vi.fn(),
     findItemType: vi.fn(),
     collectionFindFirst: vi.fn(),
+    findUser: vi.fn(),
+    itemCount: vi.fn(),
+    claimUploadedFile: vi.fn(),
+    discardStoredFile: vi.fn(),
     transaction: vi.fn(),
     revalidatePath: vi.fn(),
   };
@@ -34,8 +38,14 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     itemType: { findFirst: mocks.findItemType },
     collection: { findFirst: mocks.collectionFindFirst },
+    user: { findUnique: mocks.findUser },
+    item: { count: mocks.itemCount },
     $transaction: mocks.transaction,
   },
+}));
+vi.mock("@/lib/uploaded-files", () => ({
+  claimUploadedFile: mocks.claimUploadedFile,
+  discardStoredFile: mocks.discardStoredFile,
 }));
 vi.mock("@/generated/prisma/client", () => ({
   Prisma: {
@@ -375,6 +385,252 @@ describe("createItem", () => {
 
       expect(mocks.transaction).toHaveBeenCalledTimes(1);
     });
+  });
+
+  describe("file and image items", () => {
+    const pendingKey = "pending/user-1/3f2b8c1e-9a4d-4e6f-8b1a-2c3d4e5f6a7b";
+    const storedKey = "files/user-1/3f2b8c1e-9a4d-4e6f-8b1a-2c3d4e5f6a7b";
+    const validImage = {
+      type: "Image",
+      title: "Screenshot",
+      tags: [],
+      fileKey: pendingKey,
+      fileName: "shot.png",
+      fileSize: 2048,
+      fileMimeType: "image/png",
+    };
+    const validFile = {
+      type: "File",
+      title: "Report",
+      tags: [],
+      fileKey: pendingKey,
+      fileName: "report.pdf",
+      fileSize: 4096,
+      fileMimeType: "application/pdf",
+    };
+
+    beforeEach(() => {
+      mocks.findItemType.mockResolvedValue({ id: "type-upload" });
+      mocks.findUser.mockResolvedValue({ isPro: false });
+      mocks.itemCount.mockResolvedValue(0);
+      mocks.claimUploadedFile.mockResolvedValue({
+        ok: true,
+        file: {
+          key: storedKey,
+          fileName: "shot.png",
+          size: 2048,
+          mimeType: "image/png",
+        },
+      });
+    });
+
+    it("saves an image with the stored file's details", async () => {
+      const result = await createItem(validImage);
+
+      expect(result).toEqual({
+        success: true,
+        data: { id: "item-1", type: "Image" },
+      });
+      expect(mocks.claimUploadedFile).toHaveBeenCalledWith({
+        userId: "user-1",
+        kind: "image",
+        fileKey: pendingKey,
+        fileName: "shot.png",
+        fileSize: 2048,
+        fileMimeType: "image/png",
+      });
+      expect(mocks.tx.item.create.mock.calls[0][0].data).toMatchObject({
+        title: "Screenshot",
+        contentType: "FILE",
+        content: null,
+        url: null,
+        fileKey: storedKey,
+        fileName: "shot.png",
+        fileSize: 2048,
+        fileMimeType: "image/png",
+        itemTypeId: "type-upload",
+      });
+      expect(mocks.revalidatePath).toHaveBeenCalledWith("/items/image");
+      expect(mocks.discardStoredFile).not.toHaveBeenCalled();
+    });
+
+    it("saves the key the claim returned and not the one the browser sent", async () => {
+      await createItem(validImage);
+
+      const saved = mocks.tx.item.create.mock.calls[0][0].data;
+      expect(saved.fileKey).toBe(storedKey);
+      expect(saved.fileKey).not.toBe(pendingKey);
+    });
+
+    it("lets a free user under the limit save an image", async () => {
+      const result = await createItem(validImage);
+
+      expect(result.success).toBe(true);
+      expect(mocks.itemCount).toHaveBeenCalledWith({
+        where: { userId: "user-1" },
+      });
+    });
+
+    it("turns a free user at the item limit away before touching storage", async () => {
+      mocks.itemCount.mockResolvedValue(FREE_ITEM_LIMIT);
+
+      const result = await createItem(validImage);
+
+      expect(result).toMatchObject({ success: false, code: "free_limit" });
+      expect(mocks.claimUploadedFile).not.toHaveBeenCalled();
+      expect(mocks.transaction).not.toHaveBeenCalled();
+      expect(mocks.discardStoredFile).not.toHaveBeenCalled();
+    });
+
+    it("doesn't count items for a Pro user, who has no limit", async () => {
+      mocks.findUser.mockResolvedValue({ isPro: true });
+      mocks.tx.user.findUnique.mockResolvedValue({ isPro: true });
+      mocks.itemCount.mockResolvedValue(FREE_ITEM_LIMIT + 10);
+
+      const result = await createItem(validImage);
+
+      expect(result.success).toBe(true);
+      expect(mocks.itemCount).not.toHaveBeenCalled();
+    });
+
+    it("asks a free user to upgrade for a file before touching storage", async () => {
+      const result = await createItem(validFile);
+
+      expect(result).toEqual({
+        success: false,
+        error: "File uploads are part of Pro. Upgrade to upload files.",
+        code: "pro_required",
+      });
+      expect(mocks.claimUploadedFile).not.toHaveBeenCalled();
+      expect(mocks.transaction).not.toHaveBeenCalled();
+    });
+
+    it("lets a Pro user save a file", async () => {
+      mocks.findUser.mockResolvedValue({ isPro: true });
+      mocks.tx.user.findUnique.mockResolvedValue({ isPro: true });
+
+      const result = await createItem(validFile);
+
+      expect(result.success).toBe(true);
+      expect(mocks.claimUploadedFile).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: "file" }),
+      );
+      expect(mocks.revalidatePath).toHaveBeenCalledWith("/items/file");
+    });
+
+    it("returns the claim's reason and saves nothing when the upload can't be used", async () => {
+      mocks.claimUploadedFile.mockResolvedValue({
+        ok: false,
+        error: "The upload wasn't found. Choose the file again.",
+      });
+
+      const result = await createItem(validImage);
+
+      expect(result).toEqual({
+        success: false,
+        error: "The upload wasn't found. Choose the file again.",
+      });
+      expect(mocks.transaction).not.toHaveBeenCalled();
+      expect(mocks.discardStoredFile).not.toHaveBeenCalled();
+    });
+
+    it("removes its stored file once when another save takes the last free slot first", async () => {
+      mocks.tx.item.count.mockResolvedValue(FREE_ITEM_LIMIT);
+
+      const result = await createItem(validImage);
+
+      expect(result).toMatchObject({ success: false, code: "free_limit" });
+      expect(mocks.tx.item.create).not.toHaveBeenCalled();
+      expect(mocks.discardStoredFile).toHaveBeenCalledTimes(1);
+      expect(mocks.discardStoredFile).toHaveBeenCalledWith(storedKey);
+    });
+
+    it("removes the stored file once when saving the item fails", async () => {
+      mocks.transaction.mockRejectedValue(new Error("database down"));
+
+      const result = await createItem(validImage);
+
+      expect(result).toEqual({
+        success: false,
+        error: "Could not create the item. Try again.",
+      });
+      expect(mocks.discardStoredFile).toHaveBeenCalledTimes(1);
+      expect(mocks.discardStoredFile).toHaveBeenCalledWith(storedKey);
+    });
+
+    it("removes the stored file once, after the retries, when write conflicts keep happening", async () => {
+      mocks.transaction.mockRejectedValue(conflict("P2034"));
+
+      const result = await createItem(validImage);
+
+      expect(result).toEqual({
+        success: false,
+        error: "Could not create the item. Try again.",
+      });
+      expect(mocks.transaction).toHaveBeenCalledTimes(3);
+      expect(mocks.claimUploadedFile).toHaveBeenCalledTimes(1);
+      expect(mocks.discardStoredFile).toHaveBeenCalledTimes(1);
+    });
+
+    it("keeps the stored file when a conflict is retried and the save then works", async () => {
+      mocks.transaction
+        .mockRejectedValueOnce(conflict("P2034"))
+        .mockImplementation((run) => run(mocks.tx));
+
+      const result = await createItem(validImage);
+
+      expect(result.success).toBe(true);
+      expect(mocks.claimUploadedFile).toHaveBeenCalledTimes(1);
+      expect(mocks.discardStoredFile).not.toHaveBeenCalled();
+    });
+
+    it("removes the stored file when the chosen collection is gone", async () => {
+      mocks.tx.collection.findFirst.mockResolvedValue(null);
+
+      const result = await createItem({ ...validImage, collectionId: "gone" });
+
+      expect(result).toEqual({
+        success: false,
+        error: "Collection not found",
+      });
+      expect(mocks.discardStoredFile).toHaveBeenCalledTimes(1);
+      expect(mocks.discardStoredFile).toHaveBeenCalledWith(storedKey);
+    });
+
+    it.each([
+      [
+        "a key outside the pending folder",
+        "files/user-1/3f2b8c1e-9a4d-4e6f-8b1a-2c3d4e5f6a7b",
+      ],
+      ["a key that isn't a UUID", "pending/user-1/photo.png"],
+      ["a key with extra segments", `${pendingKey}/extra`],
+      ["no key", ""],
+    ])(
+      "rejects %s before using the rate limit or storage",
+      async (_label, fileKey) => {
+        const result = await createItem({ ...validImage, fileKey });
+
+        expect(result).toEqual({
+          success: false,
+          error: "Check the form and try again",
+        });
+        expect(mocks.consumeMutationQuota).not.toHaveBeenCalled();
+        expect(mocks.claimUploadedFile).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each(["fileKey", "fileName", "fileSize", "fileMimeType"])(
+      "requires %s",
+      async (field) => {
+        const input: Record<string, unknown> = { ...validImage };
+        delete input[field];
+
+        const result = await createItem(input);
+
+        expect(result.success).toBe(false);
+        expect(mocks.claimUploadedFile).not.toHaveBeenCalled();
+      },
+    );
   });
 
   describe("error handling", () => {

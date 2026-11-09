@@ -27,6 +27,7 @@ function toFormValues(item: DetailItem): FormValues {
     content: item.content ?? "",
     language: language && language !== "plaintext" ? language : "",
     url: item.url ?? "",
+    file: null,
     tags: item.tags,
     collectionId: item.collection?.id ?? "",
   };

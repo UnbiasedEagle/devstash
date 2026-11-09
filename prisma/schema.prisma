@@ -123,9 +123,10 @@ model Item {
   contentType  ContentType
   content      String?
   url          String?
-  fileUrl      String?
+  fileKey      String?
   fileName     String?
   fileSize     Int?
+  fileMimeType String?
   language     String?
   isFavorite   Boolean     @default(false)
   isPinned     Boolean     @default(false)

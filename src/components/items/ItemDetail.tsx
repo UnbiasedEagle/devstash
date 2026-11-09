@@ -7,6 +7,7 @@ import ItemDetailShell from "@/components/items/ItemDetailShell";
 import ItemDrawerHeader from "@/components/items/ItemDrawerHeader";
 import { SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { isCreatableItemType } from "@/lib/item-schemas";
+import { formatFileSize } from "@/lib/upload-rules";
 import type { CollectionOption, DetailItem } from "@/types/items";
 
 const CODE_TYPES = ["Snippet", "Command"];
@@ -39,12 +40,6 @@ function getCopyText(item: DetailItem) {
     return item.url && isHttpUrl(item.url) ? item.url : null;
   }
   return COPYABLE_TYPES.includes(item.itemType.name) ? item.content : null;
-}
-
-function formatFileSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function ItemBody({ item }: { item: DetailItem }) {

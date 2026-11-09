@@ -140,6 +140,24 @@ export function formatSizeLimit(bytes: number): string {
   return `${bytes / MEGABYTE} MB`;
 }
 
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < MEGABYTE) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / MEGABYTE).toFixed(1)} MB`;
+}
+
+// For the file picker's `accept`, so it offers what the rules allow
+export function acceptedExtensions(kind: UploadKind): string[] {
+  return ALLOWED_TYPES[kind].flatMap((type) =>
+    type.extensions.map((extension) => `.${extension}`),
+  );
+}
+
+export const UPLOAD_HINTS: Record<UploadKind, string> = {
+  image: `PNG, JPEG, GIF or WebP, up to ${formatSizeLimit(MAX_UPLOAD_BYTES.image)}`,
+  file: `PDF, text, Markdown, JSON, CSV, ZIP, Word, Excel or PowerPoint, up to ${formatSizeLimit(MAX_UPLOAD_BYTES.file)}`,
+};
+
 // The extension decides the stored type. The declared type is only a hint that has to agree with it: empty, the type itself or a known alias, so a renamed file can't pass as another type
 export function validateUpload(
   request: Pick<UploadRequest, "kind" | "fileName" | "mimeType" | "size">,

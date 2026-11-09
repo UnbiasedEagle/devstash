@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  acceptedExtensions,
   attachmentDisposition,
   cleanFileName,
   fileKey,
+  formatFileSize,
   isAllowedMimeType,
   MAX_UPLOAD_BYTES,
   parsePendingKey,
   pendingKey,
+  UPLOAD_HINTS,
   uploadRequestSchema,
   validateUpload,
 } from "@/lib/upload-rules";
@@ -147,6 +150,56 @@ describe("validateUpload", () => {
         size: 0,
       }),
     ).toEqual({ ok: false, error: "This file is empty" });
+  });
+});
+
+describe("formatFileSize", () => {
+  it.each([
+    [0, "0 B"],
+    [1023, "1023 B"],
+    [1024, "1.0 KB"],
+    [1536, "1.5 KB"],
+    [1024 * 1024, "1.0 MB"],
+    [5 * 1024 * 1024, "5.0 MB"],
+  ])("formats %d bytes as %s", (bytes, expected) => {
+    expect(formatFileSize(bytes)).toBe(expected);
+  });
+});
+
+describe("acceptedExtensions", () => {
+  it("lists exactly the extensions the rules allow for each kind", () => {
+    expect(acceptedExtensions("image")).toEqual([
+      ".png",
+      ".jpg",
+      ".jpeg",
+      ".gif",
+      ".webp",
+    ]);
+    expect(acceptedExtensions("file")).toContain(".pdf");
+    expect(acceptedExtensions("file")).toContain(".markdown");
+    expect(acceptedExtensions("file")).not.toContain(".svg");
+    expect(acceptedExtensions("file")).not.toContain(".exe");
+  });
+
+  it("lists nothing the rules would then refuse", () => {
+    for (const kind of ["image", "file"] as const) {
+      for (const extension of acceptedExtensions(kind)) {
+        const result = validateUpload({
+          kind,
+          fileName: `x${extension}`,
+          mimeType: "",
+          size: 10,
+        });
+        expect(result.ok).toBe(true);
+      }
+    }
+  });
+});
+
+describe("UPLOAD_HINTS", () => {
+  it("states the size limit of each kind", () => {
+    expect(UPLOAD_HINTS.image).toContain("5 MB");
+    expect(UPLOAD_HINTS.file).toContain("10 MB");
   });
 });
 

@@ -34,6 +34,10 @@ vi.mock("@/generated/prisma/client", () => ({
     TransactionIsolationLevel: { Serializable: "Serializable" },
   },
 }));
+vi.mock("@/lib/uploaded-files", () => ({
+  claimUploadedFile: vi.fn(),
+  discardStoredFile: vi.fn(),
+}));
 vi.mock("@/lib/rate-limit-actions", () => ({
   consumeMutationQuota: mocks.consumeMutationQuota,
   MUTATION_LIMIT_MESSAGE: "Too many changes, try again in a minute",
