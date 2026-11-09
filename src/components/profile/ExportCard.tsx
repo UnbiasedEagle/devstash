@@ -1,4 +1,4 @@
-import { ExportDownloadButton } from "@/components/profile/ExportDownloadButton";
+import { ExportButtons } from "@/components/profile/ExportButtons";
 import { ProfileSection } from "@/components/profile/ProfileSection";
 import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,10 +20,10 @@ export function ExportCard({ isPro }: { isPro: boolean }) {
   return (
     <ProfileSection
       title="Export your data"
-      description="Download your items, collections and tags as one JSON file. Uploaded files aren't included, only their names."
+      description="Download your items, collections and tags as one JSON file, or as a ZIP that also holds the files and images you uploaded."
     >
       {isPro ? (
-        <ExportDownloadButton />
+        <ExportButtons />
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">

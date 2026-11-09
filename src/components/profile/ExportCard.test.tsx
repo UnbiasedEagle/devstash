@@ -10,10 +10,13 @@ import { ExportCard } from "@/components/profile/ExportCard";
 describe("ExportCard", () => {
   afterEach(cleanup);
 
-  it("gives a Pro user the download button", () => {
+  it("gives a Pro user both download buttons", () => {
     render(<ExportCard isPro />);
 
     expect(screen.getByRole("button", { name: "Download JSON" })).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Download with files (ZIP)" }),
+    ).toBeEnabled();
     expect(screen.queryByText("Export is a Pro feature.")).toBeNull();
   });
 
@@ -25,6 +28,6 @@ describe("ExportCard", () => {
       "href",
       "#plan",
     );
-    expect(screen.queryByRole("button", { name: "Download JSON" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Download/ })).toBeNull();
   });
 });

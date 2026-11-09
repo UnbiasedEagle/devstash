@@ -1,11 +1,19 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import type { ExportCollection, ExportItem } from "@/types/export";
+import type {
+  ExportCollection,
+  ExportedFiles,
+  ExportFileItem,
+  ExportFormat,
+  ExportItem,
+} from "@/types/export";
 
 export const EXPORT_PAGE_SIZE = 200;
 
 const itemSelect = {
   id: true,
+  // Only to notice that an item has a file; the key is never written to the export
+  fileKey: true,
   title: true,
   description: true,
   contentType: true,
@@ -33,8 +41,11 @@ interface PageArgs {
   skip?: number;
 }
 
-export function exportFileName(now: Date): string {
-  return `devstash-export-${now.toISOString().slice(0, 10)}.json`;
+export function exportFileName(
+  now: Date,
+  format: ExportFormat = "json",
+): string {
+  return `devstash-export-${now.toISOString().slice(0, 10)}.${format}`;
 }
 
 // Pages by cursor so a large stash is never read in one query. Callers order by date then id, which keeps the order the same on every request
@@ -76,7 +87,7 @@ type DbItem = Awaited<
   ReturnType<typeof prisma.item.findMany<{ select: typeof itemSelect }>>
 >[number];
 
-function toExportItem(item: DbItem): ExportItem {
+function toExportItem(item: DbItem, filePath: string | undefined): ExportItem {
   return {
     title: item.title,
     description: item.description,
@@ -88,6 +99,7 @@ function toExportItem(item: DbItem): ExportItem {
     fileName: item.fileName,
     fileSize: item.fileSize,
     fileMimeType: item.fileMimeType,
+    ...(filePath ? { file: filePath } : {}),
     isFavorite: item.isFavorite,
     isPinned: item.isPinned,
     collection: item.collection?.name ?? null,
@@ -97,10 +109,30 @@ function toExportItem(item: DbItem): ExportItem {
   };
 }
 
-// The export as a JSON document in pieces, one page of rows each, so memory stays at one page however large the stash is. The opening text is held back and sent with the first page, so the first piece only exists once a database read has worked
+// The items that have a stored file, with only what is needed to fetch it, in the same stable order as the export. A damaged row with no name or size is still listed, so the export can say it is missing instead of silently leaving it out
+export async function* listFileItems(
+  userId: string,
+): AsyncGenerator<ExportFileItem> {
+  for await (const rows of pagesOf((args) =>
+    prisma.item.findMany({
+      where: { userId, fileKey: { not: null } },
+      orderBy: [...ORDER],
+      select: { id: true, fileKey: true, fileName: true, fileSize: true },
+      ...args,
+    }),
+  )) {
+    for (const { id, fileKey, fileName, fileSize } of rows) {
+      if (fileKey)
+        yield { id, fileKey, fileName: fileName ?? "file", fileSize };
+    }
+  }
+}
+
+// The export as a JSON document in pieces, one page of rows each, so memory stays at one page however large the stash is. The opening text is held back and sent with the first page, so the first piece only exists once a database read has worked. With `files` (a ZIP export) the items point to their file in the archive and the document ends with the files that are missing from it; `files` is read when its turn comes, so it can be filled in before the document is started
 export async function* exportChunks(
   userId: string,
   now: Date = new Date(),
+  files?: ExportedFiles,
 ): AsyncGenerator<string> {
   let pending = `{"version":1,"exportedAt":${JSON.stringify(now.toISOString())},"collections":[`;
   let separator = "";
@@ -121,6 +153,10 @@ export async function* exportChunks(
 
   pending += '],"items":[';
   separator = "";
+  // Files and items are read in two passes, so an item with a file that was added in between has neither a path nor a missing entry yet; it is listed here instead of making the export look complete
+  const accountedFor = files
+    ? new Set([...files.paths.keys(), ...files.missing.map((m) => m.itemId)])
+    : undefined;
 
   for await (const rows of pagesOf((args) =>
     prisma.item.findMany({
@@ -130,12 +166,28 @@ export async function* exportChunks(
       ...args,
     }),
   )) {
+    if (files && accountedFor) {
+      for (const row of rows) {
+        if (row.fileKey && !accountedFor.has(row.id)) {
+          files.missing.push({
+            itemId: row.id,
+            fileName: row.fileName ?? "file",
+            reason: "unreadable",
+          });
+        }
+      }
+    }
     yield pending +
       separator +
-      rows.map((row) => JSON.stringify(toExportItem(row))).join(",");
+      rows
+        .map((row) =>
+          JSON.stringify(toExportItem(row, files?.paths.get(row.id))),
+        )
+        .join(",");
     pending = "";
     separator = ",";
   }
 
-  yield pending + "]}";
+  const missing = files ? `,"missing":${JSON.stringify(files.missing)}` : "";
+  yield `${pending}]${missing}}`;
 }

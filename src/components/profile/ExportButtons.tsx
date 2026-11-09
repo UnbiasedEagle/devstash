@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import type { ExportFormat } from "@/types/export";
 
 const GENERIC_ERROR = "Something went wrong. Try again.";
 const FALLBACK_FILE_NAME = "devstash-export.json";
@@ -32,13 +33,21 @@ function fileNameOf(response: Response): string {
   return match?.[1] ?? FALLBACK_FILE_NAME;
 }
 
-export function ExportDownloadButton() {
-  const [pending, setPending] = useState(false);
+const LABELS: Record<ExportFormat, string> = {
+  json: "Download JSON",
+  zip: "Download with files (ZIP)",
+};
 
-  async function download() {
-    setPending(true);
+const FORMATS: ExportFormat[] = ["json", "zip"];
+
+// One pending state for both, so the two can't run at once and use two slots of the export limit
+export function ExportButtons() {
+  const [pending, setPending] = useState<ExportFormat | null>(null);
+
+  async function download(format: ExportFormat) {
+    setPending(format);
     try {
-      const response = await fetch("/api/export");
+      const response = await fetch(`/api/export?format=${format}`);
       if (!response.ok) {
         toast.error(await errorMessage(response));
         return;
@@ -52,13 +61,22 @@ export function ExportDownloadButton() {
     } catch {
       toast.error(GENERIC_ERROR);
     } finally {
-      setPending(false);
+      setPending(null);
     }
   }
 
   return (
-    <Button disabled={pending} onClick={download}>
-      {pending ? "Preparing..." : "Download JSON"}
-    </Button>
+    <div aria-busy={pending !== null} className="flex flex-wrap gap-3">
+      {FORMATS.map((format) => (
+        <Button
+          key={format}
+          variant={format === "zip" ? "outline" : "default"}
+          disabled={pending !== null}
+          onClick={() => download(format)}
+        >
+          {pending === format ? "Preparing..." : LABELS[format]}
+        </Button>
+      ))}
+    </div>
   );
 }

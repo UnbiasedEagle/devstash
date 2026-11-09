@@ -167,6 +167,26 @@ export async function listObjectKeys(
   };
 }
 
+// The whole object in memory, which is fine because a stored file is at most 10 MB. Reading it fully before it goes anywhere means a read that fails halfway is an error here, not a truncated file somewhere else. The size R2 reports is checked against the one that was saved before the body is read, so an object that was replaced by a bigger one is never pulled into memory
+export async function getObjectBytes(
+  key: string,
+  expectedSize: number,
+  signal?: AbortSignal,
+): Promise<Uint8Array> {
+  const { Body, ContentLength } = await client.send(
+    new GetObjectCommand({ Bucket, Key: key }),
+    { abortSignal: signal },
+  );
+  if (!Body) throw new Error("R2 returned no body");
+  if (ContentLength !== expectedSize) {
+    if ("destroy" in Body && typeof Body.destroy === "function") Body.destroy();
+    throw new Error(
+      `Expected ${expectedSize} bytes but R2 has ${ContentLength ?? "an unknown number of"} bytes`,
+    );
+  }
+  return Body.transformToByteArray();
+}
+
 // Up to 1,000 keys at once. A key that couldn't be deleted is an error, because the call itself succeeds even then
 export async function deleteObjects(keys: string[]): Promise<void> {
   if (keys.length === 0) return;

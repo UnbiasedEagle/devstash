@@ -39,6 +39,7 @@ import {
   createUploadUrl,
   deleteObject,
   deleteObjects,
+  getObjectBytes,
   getObjectInfo,
   listObjectKeys,
   moveObject,
@@ -353,6 +354,76 @@ describe("storage", () => {
         keys: [],
         nextToken: undefined,
       });
+    });
+  });
+
+  describe("getObjectBytes", () => {
+    it("reads the whole object under the key from the bucket", async () => {
+      mocks.send.mockResolvedValue({
+        ContentLength: 3,
+        Body: { transformToByteArray: async () => new Uint8Array([1, 2, 3]) },
+      });
+
+      const bytes = await getObjectBytes("files/user-1/a", 3);
+
+      expect([...bytes]).toEqual([1, 2, 3]);
+      expect(mocks.send.mock.calls[0][0].input).toEqual({
+        Bucket: "bucket",
+        Key: "files/user-1/a",
+      });
+    });
+
+    it("passes the abort signal to the request", async () => {
+      mocks.send.mockResolvedValue({
+        ContentLength: 0,
+        Body: { transformToByteArray: async () => new Uint8Array() },
+      });
+      const signal = new AbortController().signal;
+
+      await getObjectBytes("files/user-1/a", 0, signal);
+
+      expect(mocks.send.mock.calls[0][1]).toEqual({ abortSignal: signal });
+    });
+
+    it("refuses an object whose size differs from the saved one without reading its body", async () => {
+      const transformToByteArray = vi.fn();
+      const destroy = vi.fn();
+      mocks.send.mockResolvedValue({
+        ContentLength: 5_000_000,
+        Body: { transformToByteArray, destroy },
+      });
+
+      await expect(getObjectBytes("files/user-1/a", 3)).rejects.toThrow(
+        "Expected 3 bytes but R2 has 5000000 bytes",
+      );
+      expect(transformToByteArray).not.toHaveBeenCalled();
+      expect(destroy).toHaveBeenCalled();
+    });
+
+    it("refuses an object that reports no size", async () => {
+      mocks.send.mockResolvedValue({
+        Body: { transformToByteArray: vi.fn() },
+      });
+
+      await expect(getObjectBytes("files/user-1/a", 3)).rejects.toThrow(
+        "unknown number",
+      );
+    });
+
+    it("fails when R2 answers without a body", async () => {
+      mocks.send.mockResolvedValue({});
+
+      await expect(getObjectBytes("files/user-1/a", 3)).rejects.toThrow(
+        "no body",
+      );
+    });
+
+    it("lets a read error through so the caller can skip the file", async () => {
+      mocks.send.mockRejectedValue(new Error("NoSuchKey"));
+
+      await expect(getObjectBytes("files/user-1/a", 3)).rejects.toThrow(
+        "NoSuchKey",
+      );
     });
   });
 

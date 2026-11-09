@@ -13,13 +13,13 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("sonner", () => ({ toast: { error: mocks.toastError } }));
 
-import { ExportDownloadButton } from "@/components/profile/ExportDownloadButton";
+import { ExportButtons } from "@/components/profile/ExportButtons";
 
 function jsonResponse(body: unknown, status: number, headers = {}) {
   return new Response(JSON.stringify(body), { status, headers });
 }
 
-describe("ExportDownloadButton", () => {
+describe("ExportButtons", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.createObjectURL.mockReturnValue("blob:export");
@@ -50,7 +50,7 @@ describe("ExportDownloadButton", () => {
         }),
       ),
     );
-    render(<ExportDownloadButton />);
+    render(<ExportButtons />);
 
     await userEvent.click(
       screen.getByRole("button", { name: "Download JSON" }),
@@ -65,6 +65,24 @@ describe("ExportDownloadButton", () => {
   });
 
   it.each([
+    ["json", "Download JSON"],
+    ["zip", "Download with files (ZIP)"],
+  ] as const)(
+    "asks the route for the %s format under its own label",
+    async (format, label) => {
+      const fetchMock = vi.fn().mockResolvedValue(jsonResponse({}, 200));
+      vi.stubGlobal("fetch", fetchMock);
+      render(<ExportButtons />);
+
+      await userEvent.click(screen.getByRole("button", { name: label }));
+
+      await waitFor(() =>
+        expect(fetchMock).toHaveBeenCalledWith(`/api/export?format=${format}`),
+      );
+    },
+  );
+
+  it.each([
     [429, "Too many exports, try again in a minute"],
     [403, "Export is a Pro feature"],
   ])(
@@ -74,7 +92,7 @@ describe("ExportDownloadButton", () => {
         "fetch",
         vi.fn().mockResolvedValue(jsonResponse({ error: message }, status)),
       );
-      render(<ExportDownloadButton />);
+      render(<ExportButtons />);
 
       await userEvent.click(
         screen.getByRole("button", { name: "Download JSON" }),
@@ -95,7 +113,7 @@ describe("ExportDownloadButton", () => {
       "fetch",
       vi.fn().mockResolvedValue(new Response("<html>", { status: 502 })),
     );
-    render(<ExportDownloadButton />);
+    render(<ExportButtons />);
 
     await userEvent.click(
       screen.getByRole("button", { name: "Download JSON" }),
@@ -111,7 +129,7 @@ describe("ExportDownloadButton", () => {
 
   it("shows a generic message when the request itself fails", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
-    render(<ExportDownloadButton />);
+    render(<ExportButtons />);
 
     await userEvent.click(
       screen.getByRole("button", { name: "Download JSON" }),
@@ -124,6 +142,22 @@ describe("ExportDownloadButton", () => {
     );
   });
 
+  it("disables both buttons while one export is being prepared, so the two can't run at once", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockReturnValue(new Promise(() => {})));
+    render(<ExportButtons />);
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Download with files (ZIP)" }),
+    );
+
+    expect(
+      await screen.findByRole("button", { name: "Preparing..." }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Download JSON" }),
+    ).toBeDisabled();
+  });
+
   it("is disabled while the export is being prepared, so a double click asks once", async () => {
     let finish: (value: Response) => void = () => {};
     const fetchMock = vi.fn().mockReturnValue(
@@ -132,7 +166,7 @@ describe("ExportDownloadButton", () => {
       }),
     );
     vi.stubGlobal("fetch", fetchMock);
-    render(<ExportDownloadButton />);
+    render(<ExportButtons />);
 
     await userEvent.click(
       screen.getByRole("button", { name: "Download JSON" }),
