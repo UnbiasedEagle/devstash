@@ -22,8 +22,7 @@ const emailEnvSchema = z.object({
 
 const stripeEnvSchema = z.object({
   STRIPE_SECRET_KEY: z.string().min(1),
-  // Only the webhook route reads it, so a missing value must not fail the deploy until that route exists
-  STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1),
   STRIPE_PRICE_MONTHLY: z.string().min(1),
   STRIPE_PRICE_YEARLY: z.string().min(1),
 });

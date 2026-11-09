@@ -26,6 +26,8 @@ Keep the user's Pro status in sync with Stripe. Stripe tells us when a subscript
 ## Notes
 
 - Put the status-to-plan decision in a small pure function (`isActiveSubscription(status)`) so it is tested on its own
+- A user keeps one current subscription. A second live subscription on the same customer (made outside the app, since checkout blocks it) is ignored until the current one ends, then takes over instead of the user losing Pro
+- `customer.subscription.created` and invoice events are not handled: checkout completion covers the normal flow, `past_due` leaves access unchanged and Stripe's retry window ends in `unpaid` or `canceled`, which revokes
 - Existing items and collections over the free limits stay after a downgrade. Only creating new ones is blocked again by the existing limit checks
 
 ## References

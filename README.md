@@ -75,8 +75,7 @@ Open [http://localhost:3000](http://localhost:3000) and create an account. A new
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | GitHub OAuth app. Callback URL: `{BETTER_AUTH_URL}/api/auth/callback/github` |
 | `RESEND_API_KEY`, `EMAIL_FROM` | Resend key and sender. The shared `onboarding@resend.dev` sender only delivers to your own Resend account address |
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | [Upstash Redis](https://upstash.com) REST credentials, used for rate limiting. Set them in every Vercel environment, or builds fail |
-| `STRIPE_SECRET_KEY` | [Stripe](https://stripe.com) secret key. Use the test mode key everywhere until billing is finished. Set it in every Vercel environment, or builds fail |
-| `STRIPE_WEBHOOK_SECRET` | Optional until the webhook route is added. Comes from `stripe listen` locally or from the webhook endpoint in the dashboard |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | [Stripe](https://stripe.com) secret key and the signing secret of the webhook endpoint. Use test mode values everywhere until billing is finished. Locally the webhook secret comes from `stripe listen --print-secret`, with `stripe listen --forward-to localhost:3000/api/webhooks/stripe` running. On Vercel, create a webhook endpoint for `{your app URL}/api/webhooks/stripe` listening to `checkout.session.completed`, `customer.subscription.updated` and `customer.subscription.deleted`, and use its signing secret. Set both in every Vercel environment, or builds fail |
 | `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY` | Ids (`price_...`) of the $8 monthly and $72 yearly Pro prices |
 | `EMAIL_VERIFICATION_ENABLED` | Optional, defaults to `true`. Set to `false` locally to sign up without email verification, for example in browser tests. The build fails if it is `false` on Vercel production. With it off, signing up with an existing email returns an error instead of the generic response |
 
