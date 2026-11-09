@@ -10,13 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  createItemSchema,
   isUploadItemType,
   itemMetaSchema,
   ITEM_LANGUAGES,
+  updateItemSchema,
   uploadKindFor,
-  type CreateItemInput,
   type NewItemType,
+  type UpdateItemInput,
   type UploadItemType,
 } from "@/lib/item-schemas";
 import { validateChosenFile } from "@/lib/upload-client";
@@ -62,6 +62,8 @@ function buildInput(values: FormValues) {
     tags: values.tags,
     collectionId: values.collectionId || undefined,
   };
+  // The file itself is chosen when an item is created and can't be changed afterwards, so only the common fields are checked here
+  if (isUploadItemType(values.type)) return common;
   if (values.type === "URL") return { ...common, url: values.url };
   if (CODE_TYPES.includes(values.type)) {
     return {
@@ -74,11 +76,11 @@ function buildInput(values: FormValues) {
 }
 
 type FormValidation =
-  | { data: CreateItemInput; errors?: undefined }
+  | { data: UpdateItemInput; errors?: undefined }
   | { errors: FormErrors; data?: undefined };
 
 export function validateItemForm(values: FormValues): FormValidation {
-  const parsed = createItemSchema.safeParse(buildInput(values));
+  const parsed = updateItemSchema.safeParse(buildInput(values));
   if (parsed.success) return { data: parsed.data };
 
   const errors: FormErrors = z.flattenError(parsed.error).fieldErrors;

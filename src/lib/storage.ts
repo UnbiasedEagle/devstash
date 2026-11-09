@@ -2,8 +2,10 @@ import "server-only";
 import {
   CopyObjectCommand,
   DeleteObjectCommand,
+  DeleteObjectsCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -72,17 +74,18 @@ export function createUploadUrl(options: {
   );
 }
 
-// Files always download as attachments. Images are served inline with only the type that was stored, never one the link's holder picks. A stored type that isn't on the allowed list for its kind is refused, so a bad row can never make the bucket serve HTML
+// Files always download as attachments. Images are served inline, for previews, with only the type that was stored, never one the link's holder picks; an image link made for the Download button is an attachment too. A stored type that isn't on the allowed list for its kind is refused, so a bad row can never make the bucket serve HTML
 export function createDownloadUrl(options: {
   key: string;
   kind: UploadKind;
   fileName: string;
   mimeType: string;
+  asAttachment?: boolean;
 }): Promise<string> {
   if (!isAllowedMimeType(options.kind, options.mimeType)) {
     throw new Error("The stored type isn't allowed for this kind of upload");
   }
-  const isImage = options.kind === "image";
+  const isImage = options.kind === "image" && !options.asAttachment;
   return getSignedUrl(
     client,
     new GetObjectCommand({
@@ -134,4 +137,47 @@ export async function moveObject(
 
 export async function deleteObject(key: string): Promise<void> {
   await client.send(new DeleteObjectCommand({ Bucket, Key: key }));
+}
+
+export interface ObjectPage {
+  keys: string[];
+  // Present while there are more objects under the prefix
+  nextToken: string | undefined;
+}
+
+// One page of up to 1,000 keys under a prefix. The prefix should end in a slash so one user's id can never match another's
+export async function listObjectKeys(
+  prefix: string,
+  continuationToken?: string,
+): Promise<ObjectPage> {
+  const page = await client.send(
+    new ListObjectsV2Command({
+      Bucket,
+      Prefix: prefix,
+      ContinuationToken: continuationToken,
+    }),
+  );
+  // Stopping here would silently leave the rest of the listing unseen
+  if (page.IsTruncated && !page.NextContinuationToken) {
+    throw new Error("R2 returned a truncated listing without a next token");
+  }
+  return {
+    keys: (page.Contents ?? []).flatMap(({ Key }) => (Key ? [Key] : [])),
+    nextToken: page.IsTruncated ? page.NextContinuationToken : undefined,
+  };
+}
+
+// Up to 1,000 keys at once. A key that couldn't be deleted is an error, because the call itself succeeds even then
+export async function deleteObjects(keys: string[]): Promise<void> {
+  if (keys.length === 0) return;
+  const result = await client.send(
+    new DeleteObjectsCommand({
+      Bucket,
+      Delete: { Objects: keys.map((Key) => ({ Key })), Quiet: true },
+    }),
+  );
+  const failed = result.Errors ?? [];
+  if (failed.length > 0) {
+    throw new Error(`Storage could not delete ${failed.length} objects`);
+  }
 }

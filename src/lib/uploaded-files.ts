@@ -88,12 +88,12 @@ export async function claimUploadedFile(options: {
   };
 }
 
-// Used when the item couldn't be saved after the file was moved. A failure only leaves an object in the bucket, so it is logged and not shown
+// Used when an item couldn't be saved after its file was moved, and when an item is deleted. A failure only leaves an unused object in the bucket, so it is logged with the key and not shown
 export async function discardStoredFile(key: string): Promise<void> {
   try {
     await deleteObject(key);
   } catch (error) {
-    console.error("Failed to delete a stored file after a failed save", {
+    console.error("Failed to delete a stored file", {
       key,
       error,
     });

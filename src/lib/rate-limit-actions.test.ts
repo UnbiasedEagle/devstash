@@ -14,10 +14,34 @@ const redisMock = vi.hoisted(() => {
 vi.mock("@/lib/redis", () => ({ redis: { multi: redisMock.multi } }));
 
 import {
+  consumeDownloadQuota,
   consumeMutationQuota,
   consumeSearchQuota,
   consumeUploadQuota,
 } from "@/lib/rate-limit-actions";
+
+describe("consumeDownloadQuota", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    redisMock.chain.incr.mockReturnValue(redisMock.chain);
+    redisMock.chain.expire.mockReturnValue(redisMock.chain);
+  });
+
+  it("allows up to the 60th download in the window and blocks the 61st", async () => {
+    redisMock.chain.exec.mockResolvedValueOnce([60, 0]);
+    expect(await consumeDownloadQuota("user-1")).toBe(true);
+
+    redisMock.chain.exec.mockResolvedValueOnce([61, 0]);
+    expect(await consumeDownloadQuota("user-1")).toBe(false);
+  });
+
+  it("counts separately from the other quotas", async () => {
+    redisMock.chain.exec.mockResolvedValueOnce([1, 1]);
+    await consumeDownloadQuota("user-42");
+
+    expect(redisMock.chain.incr).toHaveBeenCalledWith("download-quota:user-42");
+  });
+});
 
 describe("consumeUploadQuota", () => {
   beforeEach(() => {

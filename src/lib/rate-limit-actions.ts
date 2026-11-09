@@ -7,9 +7,13 @@ const SEARCH_LIMIT = 300;
 const SEARCH_WINDOW_SECONDS = 60;
 const UPLOAD_LIMIT = 10;
 const UPLOAD_WINDOW_SECONDS = 60;
+const DOWNLOAD_LIMIT = 60;
+const DOWNLOAD_WINDOW_SECONDS = 60;
 
 export const MUTATION_LIMIT_MESSAGE = "Too many changes, try again in a minute";
 export const UPLOAD_LIMIT_MESSAGE = "Too many uploads, try again in a minute";
+export const DOWNLOAD_LIMIT_MESSAGE =
+  "Too many downloads, try again in a minute";
 export const SEARCH_LIMIT_MESSAGE = "Too many searches, try again in a minute";
 
 const OUTAGE_LOG_INTERVAL_MS = 60_000;
@@ -52,6 +56,16 @@ export function consumeMutationQuota(userId: string): Promise<boolean> {
     userId,
     MUTATION_LIMIT,
     MUTATION_WINDOW_SECONDS,
+  );
+}
+
+// Each click makes a link to a file that can be 10 MB, so downloads are counted apart from searching and changing things
+export function consumeDownloadQuota(userId: string): Promise<boolean> {
+  return consumeQuota(
+    "download-quota",
+    userId,
+    DOWNLOAD_LIMIT,
+    DOWNLOAD_WINDOW_SECONDS,
   );
 }
 

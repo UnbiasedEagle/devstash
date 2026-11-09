@@ -1,9 +1,13 @@
+import { FileText } from "lucide-react";
 import ItemFlagIcons from "@/components/items/ItemFlagIcons";
 import ItemLink from "@/components/items/ItemLink";
+import SignedImage from "@/components/items/SignedImage";
 import TagChip from "@/components/items/TagChip";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getImagePreviewUrl } from "@/lib/file-previews";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 import { formatRelativeTime } from "@/lib/relative-time";
+import { formatFileSize } from "@/lib/upload-rules";
 import type { ListItem } from "@/types/items";
 
 interface ItemCardProps {
@@ -23,7 +27,22 @@ function getHostname(url: string) {
   }
 }
 
-function ItemPreview({ item }: { item: ListItem }) {
+function ItemPreview({
+  item,
+  imageUrl,
+}: {
+  item: ListItem;
+  imageUrl: string | null;
+}) {
+  if (imageUrl) {
+    return (
+      <SignedImage
+        src={imageUrl}
+        alt={item.title}
+        className="h-36 w-full rounded-md bg-muted object-cover"
+      />
+    );
+  }
   if (item.contentType === "URL" && item.url) {
     return (
       <p className="truncate font-mono text-xs text-muted-foreground">
@@ -33,8 +52,12 @@ function ItemPreview({ item }: { item: ListItem }) {
   }
   if (item.contentType === "FILE" && item.fileName) {
     return (
-      <p className="truncate font-mono text-xs text-muted-foreground">
-        {item.fileName}
+      <p className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
+        <FileText aria-hidden className="size-3.5 shrink-0" />
+        <span className="truncate">{item.fileName}</span>
+        {item.fileSize !== null && (
+          <span className="shrink-0">{formatFileSize(item.fileSize)}</span>
+        )}
       </p>
     );
   }
@@ -68,7 +91,8 @@ export function ItemCardSkeleton() {
   );
 }
 
-export default function ItemCard({ item, now, href }: ItemCardProps) {
+export default async function ItemCard({ item, now, href }: ItemCardProps) {
+  const imageUrl = await getImagePreviewUrl(item);
   const type = item.itemType;
   const Icon = ITEM_TYPE_ICONS[type.icon];
   const visibleTags = item.tags.slice(0, VISIBLE_TAG_COUNT);
@@ -114,7 +138,7 @@ export default function ItemCard({ item, now, href }: ItemCardProps) {
         </p>
       )}
 
-      <ItemPreview item={item} />
+      <ItemPreview item={item} imageUrl={imageUrl} />
 
       <footer className="mt-auto flex items-center justify-between gap-3 pt-1">
         <ul className="flex min-w-0 flex-wrap gap-1.5">

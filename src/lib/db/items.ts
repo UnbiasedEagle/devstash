@@ -27,7 +27,10 @@ const listItemSelect = {
   ...dashboardItemSelect,
   contentType: true,
   url: true,
+  fileKey: true,
   fileName: true,
+  fileSize: true,
+  fileMimeType: true,
 } satisfies Prisma.ItemSelect;
 
 function toDashboardItem({ tags, ...item }: ItemRecord): DashboardItem {
@@ -41,8 +44,10 @@ const detailItemSelect = {
   contentType: true,
   content: true,
   url: true,
+  fileKey: true,
   fileName: true,
   fileSize: true,
+  fileMimeType: true,
   language: true,
   isFavorite: true,
   isPinned: true,

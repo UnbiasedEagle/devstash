@@ -14,7 +14,7 @@ export function isCreatableItemType(name: string): name is CreatableItemType {
   return (CREATABLE_ITEM_TYPES as readonly string[]).includes(name);
 }
 
-// Items made from an uploaded file. They can be created but not edited with the text form
+// Items made from an uploaded file. Edits change only their details, never the file
 export const UPLOAD_ITEM_TYPES = ["File", "Image"] as const;
 
 export type UploadItemType = (typeof UPLOAD_ITEM_TYPES)[number];
@@ -150,17 +150,30 @@ const fileFields = {
   fileMimeType: z.string().max(127),
 };
 
-export const createItemSchema = z.discriminatedUnion("type", [
+const textItemSchemas = [
   z.object({ type: z.literal("Snippet"), ...common, content, language }),
   z.object({ type: z.literal("Command"), ...common, content, language }),
   z.object({ type: z.literal("Prompt"), ...common, content }),
   z.object({ type: z.literal("Note"), ...common, content }),
   z.object({ type: z.literal("URL"), ...common, url }),
+] as const;
+
+export const createItemSchema = z.discriminatedUnion("type", [
+  ...textItemSchemas,
   z.object({ type: z.literal("File"), ...common, ...fileFields }),
   z.object({ type: z.literal("Image"), ...common, ...fileFields }),
 ]);
 
 export type CreateItemInput = z.infer<typeof createItemSchema>;
+
+// Editing a File or an Image changes only what every item has, never the file itself
+export const updateItemSchema = z.discriminatedUnion("type", [
+  ...textItemSchemas,
+  z.object({ type: z.literal("File"), ...common }),
+  z.object({ type: z.literal("Image"), ...common }),
+]);
+
+export type UpdateItemInput = z.infer<typeof updateItemSchema>;
 
 export const itemIdSchema = z.string().min(1).max(64);
 

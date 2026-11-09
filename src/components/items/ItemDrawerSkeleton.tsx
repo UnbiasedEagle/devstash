@@ -1,7 +1,7 @@
 import ItemDrawerHeader from "@/components/items/ItemDrawerHeader";
 import { SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { isCreatableItemType } from "@/lib/item-schemas";
+import { isNewItemType } from "@/lib/item-schemas";
 import type { DrawerPreview } from "@/types/items";
 
 export default function ItemDrawerSkeleton({
@@ -10,7 +10,7 @@ export default function ItemDrawerSkeleton({
   preview?: DrawerPreview | null;
 }) {
   // Before the preview is known (a direct link) the type is unknown, so the common toolbar is assumed
-  const showEdit = !preview || isCreatableItemType(preview.itemType.name);
+  const showEdit = !preview || isNewItemType(preview.itemType.name);
 
   return (
     <div className="flex flex-col gap-5 p-6" aria-busy>

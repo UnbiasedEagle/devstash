@@ -1,12 +1,15 @@
-import { Folder } from "lucide-react";
+import { FileText, Folder } from "lucide-react";
 import Link from "next/link";
 import CodeBlock from "@/components/items/CodeBlock";
 import { CopyButton } from "@/components/items/CopyButton";
+import DownloadButton from "@/components/items/DownloadButton";
 import MarkdownContent from "@/components/items/MarkdownContent";
 import ItemDetailShell from "@/components/items/ItemDetailShell";
 import ItemDrawerHeader from "@/components/items/ItemDrawerHeader";
+import SignedImage from "@/components/items/SignedImage";
 import { SheetDescription, SheetTitle } from "@/components/ui/sheet";
-import { isCreatableItemType } from "@/lib/item-schemas";
+import { getImagePreviewUrl } from "@/lib/file-previews";
+import { isNewItemType } from "@/lib/item-schemas";
 import { formatFileSize } from "@/lib/upload-rules";
 import type { CollectionOption, DetailItem } from "@/types/items";
 
@@ -42,7 +45,53 @@ function getCopyText(item: DetailItem) {
   return COPYABLE_TYPES.includes(item.itemType.name) ? item.content : null;
 }
 
-function ItemBody({ item }: { item: DetailItem }) {
+function FileBody({
+  item,
+  previewUrl,
+}: {
+  item: DetailItem;
+  previewUrl: string | null;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      {previewUrl && (
+        <SignedImage
+          src={previewUrl}
+          alt={item.title}
+          className="max-h-80 w-full rounded-md bg-muted object-contain"
+        />
+      )}
+      <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+        <FileText
+          aria-hidden
+          className="size-5 shrink-0 text-muted-foreground"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="break-all font-mono text-sm">
+            {item.fileName ?? "Unnamed file"}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {[
+              item.fileSize !== null ? formatFileSize(item.fileSize) : null,
+              item.fileMimeType,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        </div>
+        {item.fileKey && <DownloadButton itemId={item.id} />}
+      </div>
+    </div>
+  );
+}
+
+function ItemBody({
+  item,
+  previewUrl,
+}: {
+  item: DetailItem;
+  previewUrl: string | null;
+}) {
   if (item.contentType === "URL" && item.url) {
     return isHttpUrl(item.url) ? (
       <a
@@ -61,12 +110,7 @@ function ItemBody({ item }: { item: DetailItem }) {
   }
 
   if (item.contentType === "FILE") {
-    return (
-      <p className="font-mono text-sm text-muted-foreground">
-        {item.fileName ?? "Unnamed file"}
-        {item.fileSize !== null && ` · ${formatFileSize(item.fileSize)}`}
-      </p>
-    );
+    return <FileBody item={item} previewUrl={previewUrl} />;
   }
 
   if (!item.content) {
@@ -89,7 +133,7 @@ export function ItemNotFound() {
   );
 }
 
-export default function ItemDetail({
+export default async function ItemDetail({
   item,
   collections,
 }: {
@@ -97,13 +141,14 @@ export default function ItemDetail({
   collections: CollectionOption[];
 }) {
   const copyText = getCopyText(item);
+  const previewUrl = await getImagePreviewUrl(item);
 
   return (
     <ItemDetailShell
       key={item.id}
       item={item}
       collections={collections}
-      editable={isCreatableItemType(item.itemType.name)}
+      editable={isNewItemType(item.itemType.name)}
     >
       <ItemDrawerHeader
         title={item.title}
@@ -118,7 +163,7 @@ export default function ItemDetail({
         </div>
       )}
 
-      <ItemBody item={item} />
+      <ItemBody item={item} previewUrl={previewUrl} />
 
       <footer className="mt-2 flex flex-wrap gap-x-6 gap-y-1 border-t border-border pt-4 text-xs text-muted-foreground">
         {item.collection && (

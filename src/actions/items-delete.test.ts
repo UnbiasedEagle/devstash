@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => {
     tagDeleteMany: vi.fn(),
     transaction: vi.fn(),
     revalidatePath: vi.fn(),
+    deleteObject: vi.fn(),
   };
 });
 
@@ -34,9 +35,11 @@ vi.mock("@/generated/prisma/client", () => ({
     TransactionIsolationLevel: { Serializable: "Serializable" },
   },
 }));
-vi.mock("@/lib/uploaded-files", () => ({
-  claimUploadedFile: vi.fn(),
-  discardStoredFile: vi.fn(),
+// The real discardStoredFile runs, on top of a storage mock, so what happens when storage fails is the real behavior
+vi.mock("@/lib/storage", () => ({
+  getObjectInfo: vi.fn(),
+  moveObject: vi.fn(),
+  deleteObject: mocks.deleteObject,
 }));
 vi.mock("@/lib/rate-limit-actions", () => ({
   consumeMutationQuota: mocks.consumeMutationQuota,
@@ -63,6 +66,7 @@ describe("deleteItem", () => {
     mocks.itemDelete.mockResolvedValue({ id: "item-1" });
     mocks.tagDeleteMany.mockResolvedValue({ count: 0 });
     mocks.transaction.mockImplementation(runInTransaction);
+    mocks.deleteObject.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -76,6 +80,71 @@ describe("deleteItem", () => {
 
     expect(result.success).toBe(false);
     expect(mocks.transaction).not.toHaveBeenCalled();
+  });
+
+  describe("an item with a stored file", () => {
+    const fileKey = "files/user-1/3f2b8c1e-9a4d-4e6f-8b1a-2c3d4e5f6a7b";
+
+    beforeEach(() => {
+      mocks.itemFindFirst.mockResolvedValue({ fileKey, tags: [] });
+    });
+
+    it("deletes the stored file once the item is deleted", async () => {
+      const result = await deleteItem("item-1");
+
+      expect(result).toEqual({ success: true, data: { id: "item-1" } });
+      expect(mocks.deleteObject).toHaveBeenCalledTimes(1);
+      expect(mocks.deleteObject).toHaveBeenCalledWith(fileKey);
+      expect(mocks.itemDelete.mock.invocationCallOrder[0]).toBeLessThan(
+        mocks.deleteObject.mock.invocationCallOrder[0],
+      );
+    });
+
+    it("reads the file's key together with the item, inside the same transaction", async () => {
+      await deleteItem("item-1");
+
+      expect(mocks.itemFindFirst).toHaveBeenCalledWith({
+        where: { id: "item-1", userId: "user-1" },
+        select: { fileKey: true, tags: { select: { tagId: true } } },
+      });
+    });
+
+    it("keeps the item deleted, logs the key and shows no error when the stored file can't be deleted", async () => {
+      mocks.deleteObject.mockRejectedValue(new Error("R2 is down"));
+
+      const result = await deleteItem("item-1");
+
+      expect(result).toEqual({ success: true, data: { id: "item-1" } });
+      expect(console.error).toHaveBeenCalledWith(
+        "Failed to delete a stored file",
+        expect.objectContaining({ key: fileKey }),
+      );
+    });
+
+    it("keeps the file when the item couldn't be deleted", async () => {
+      mocks.transaction.mockRejectedValue(new Error("database down"));
+
+      const result = await deleteItem("item-1");
+
+      expect(result.success).toBe(false);
+      expect(mocks.deleteObject).not.toHaveBeenCalled();
+    });
+
+    it("keeps the file when the item wasn't found", async () => {
+      mocks.itemFindFirst.mockResolvedValue(null);
+
+      const result = await deleteItem("item-1");
+
+      expect(result).toEqual({ success: false, error: "Item not found" });
+      expect(mocks.deleteObject).not.toHaveBeenCalled();
+    });
+  });
+
+  it("doesn't touch storage for an item that has no file", async () => {
+    const result = await deleteItem("item-1");
+
+    expect(result.success).toBe(true);
+    expect(mocks.deleteObject).not.toHaveBeenCalled();
   });
 
   it("stops at the mutation limit", async () => {

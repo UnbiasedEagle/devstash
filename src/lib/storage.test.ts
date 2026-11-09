@@ -18,6 +18,8 @@ vi.mock("@aws-sdk/client-s3", () => {
     HeadObjectCommand: class HeadObjectCommand extends Command {},
     CopyObjectCommand: class CopyObjectCommand extends Command {},
     DeleteObjectCommand: class DeleteObjectCommand extends Command {},
+    DeleteObjectsCommand: class DeleteObjectsCommand extends Command {},
+    ListObjectsV2Command: class ListObjectsV2Command extends Command {},
   };
 });
 vi.mock("@aws-sdk/s3-request-presigner", () => ({
@@ -36,7 +38,9 @@ import {
   createDownloadUrl,
   createUploadUrl,
   deleteObject,
+  deleteObjects,
   getObjectInfo,
+  listObjectKeys,
   moveObject,
 } from "@/lib/storage";
 
@@ -248,6 +252,140 @@ describe("storage", () => {
         moveObject("pending/user-1/abc", "files/user-1/abc"),
       ).rejects.toThrow("copy failed");
       expect(mocks.send).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("createDownloadUrl for the Download button", () => {
+    it("makes an image link an attachment when asked, under the file's own name", async () => {
+      await createDownloadUrl({
+        key: "files/user-1/abc",
+        kind: "image",
+        fileName: "shot.png",
+        mimeType: "image/png",
+        asAttachment: true,
+      });
+
+      expect(signedCommand().input).toMatchObject({
+        ResponseContentType: "image/png",
+        ResponseContentDisposition: expect.stringContaining(
+          'attachment; filename="shot.png"',
+        ),
+      });
+    });
+
+    it("keeps an image link inline when it isn't asked for an attachment", async () => {
+      await createDownloadUrl({
+        key: "files/user-1/abc",
+        kind: "image",
+        fileName: "shot.png",
+        mimeType: "image/png",
+        asAttachment: false,
+      });
+
+      expect(signedCommand().input).toMatchObject({
+        ResponseContentDisposition: "inline",
+      });
+    });
+
+    it("makes a file an attachment whether or not it is asked to", async () => {
+      await createDownloadUrl({
+        key: "files/user-1/abc",
+        kind: "file",
+        fileName: "report.pdf",
+        mimeType: "application/pdf",
+        asAttachment: false,
+      });
+
+      expect(signedCommand().input).toMatchObject({
+        ResponseContentDisposition: expect.stringContaining("attachment"),
+      });
+    });
+  });
+
+  describe("listObjectKeys", () => {
+    it("lists one page under the prefix and says where the next one starts", async () => {
+      mocks.send.mockResolvedValue({
+        Contents: [{ Key: "files/user-1/a" }, { Key: "files/user-1/b" }],
+        IsTruncated: true,
+        NextContinuationToken: "next",
+      });
+
+      const page = await listObjectKeys("files/user-1/", "start");
+
+      expect(page).toEqual({
+        keys: ["files/user-1/a", "files/user-1/b"],
+        nextToken: "next",
+      });
+      expect(mocks.send.mock.calls[0][0].input).toEqual({
+        Bucket: "bucket",
+        Prefix: "files/user-1/",
+        ContinuationToken: "start",
+      });
+    });
+
+    it("reports no next page for the last one", async () => {
+      mocks.send.mockResolvedValue({
+        Contents: [{ Key: "files/user-1/a" }],
+        IsTruncated: false,
+        NextContinuationToken: "ignored",
+      });
+
+      const page = await listObjectKeys("files/user-1/");
+
+      expect(page.nextToken).toBeUndefined();
+    });
+
+    it("fails on a truncated listing with no next token instead of ending early", async () => {
+      mocks.send.mockResolvedValue({
+        Contents: [{ Key: "files/user-1/a" }],
+        IsTruncated: true,
+      });
+
+      await expect(listObjectKeys("files/user-1/")).rejects.toThrow(
+        "truncated listing",
+      );
+    });
+
+    it("returns no keys when the prefix is empty", async () => {
+      mocks.send.mockResolvedValue({ IsTruncated: false });
+
+      await expect(listObjectKeys("files/user-1/")).resolves.toEqual({
+        keys: [],
+        nextToken: undefined,
+      });
+    });
+  });
+
+  describe("deleteObjects", () => {
+    it("deletes a batch of keys in one request", async () => {
+      mocks.send.mockResolvedValue({});
+
+      await deleteObjects(["files/user-1/a", "files/user-1/b"]);
+
+      expect(mocks.send).toHaveBeenCalledTimes(1);
+      expect(mocks.send.mock.calls[0][0].input).toEqual({
+        Bucket: "bucket",
+        Delete: {
+          Objects: [{ Key: "files/user-1/a" }, { Key: "files/user-1/b" }],
+          Quiet: true,
+        },
+      });
+    });
+
+    it("sends nothing for no keys", async () => {
+      await deleteObjects([]);
+
+      expect(mocks.send).not.toHaveBeenCalled();
+    });
+
+    it("fails when storage reports keys it couldn't delete, because the request itself succeeds", async () => {
+      mocks.send.mockResolvedValue({
+        Errors: [{ Key: "files/user-1/a", Code: "AccessDenied" }],
+      });
+
+      await expect(deleteObjects(["files/user-1/a"])).rejects.toThrow(
+        "could not delete 1 objects",
+      );
     });
   });
 

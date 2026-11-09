@@ -237,7 +237,7 @@ describe("discardStoredFile", () => {
     ).resolves.toBeUndefined();
 
     expect(consoleError).toHaveBeenCalledWith(
-      "Failed to delete a stored file after a failed save",
+      "Failed to delete a stored file",
       expect.objectContaining({ key: "files/user-1/abc" }),
     );
     consoleError.mockRestore();

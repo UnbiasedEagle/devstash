@@ -11,6 +11,7 @@ import {
   MAX_TITLE_LENGTH,
   MAX_URL_LENGTH,
   parseItemId,
+  updateItemSchema,
   uploadKindFor,
 } from "@/lib/item-schemas";
 
@@ -324,5 +325,63 @@ describe("upload item types", () => {
   it("maps File and Image to their upload kinds", () => {
     expect(uploadKindFor("Image")).toBe("image");
     expect(uploadKindFor("File")).toBe("file");
+  });
+});
+
+describe("updateItemSchema", () => {
+  const fileEdit = { title: "Renamed", description: "About", tags: ["docs"] };
+
+  it.each(["File", "Image"])(
+    "accepts a %s edit with only the common fields",
+    (type) => {
+      const parsed = updateItemSchema.safeParse({ type, ...fileEdit });
+
+      expect(parsed.success).toBe(true);
+      expect(parsed.data).toEqual({ type, ...fileEdit });
+    },
+  );
+
+  it("drops file fields sent with an edit, so the file can't be changed through it", () => {
+    const parsed = updateItemSchema.safeParse({
+      type: "Image",
+      ...fileEdit,
+      fileKey: "pending/user-1/3f2b8c1e-9a4d-4e6f-8b1a-2c3d4e5f6a7b",
+      fileName: "other.png",
+      fileSize: 10,
+      fileMimeType: "image/png",
+    });
+
+    expect(parsed.success).toBe(true);
+    expect(parsed.data).not.toHaveProperty("fileKey");
+    expect(parsed.data).not.toHaveProperty("fileName");
+    expect(parsed.data).not.toHaveProperty("fileSize");
+    expect(parsed.data).not.toHaveProperty("fileMimeType");
+  });
+
+  it("still applies the shared title and tag rules to a file edit", () => {
+    expect(
+      updateItemSchema.safeParse({ type: "File", title: " ", tags: [] })
+        .success,
+    ).toBe(false);
+    expect(
+      updateItemSchema.safeParse({
+        type: "File",
+        title: "x",
+        tags: ["a", "a"],
+      }).success,
+    ).toBe(false);
+  });
+
+  it("checks a text item exactly as it does when it is created", () => {
+    expect(updateItemSchema.safeParse(snippet).success).toBe(true);
+    expect(
+      updateItemSchema.safeParse({ ...snippet, content: "  " }).success,
+    ).toBe(false);
+  });
+
+  it("is not satisfied by a create request for a file, which needs the file fields", () => {
+    expect(
+      createItemSchema.safeParse({ type: "File", ...fileEdit }).success,
+    ).toBe(false);
   });
 });

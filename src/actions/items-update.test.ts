@@ -91,33 +91,82 @@ describe("updateItem", () => {
     expect(mocks.update).not.toHaveBeenCalled();
   });
 
-  it.each(["File", "Image"])(
-    "doesn't edit a %s item with the text form, before the rate limit or database",
-    async (type) => {
-      mocks.findFirst.mockResolvedValue({
-        itemType: { name: type },
+  describe("File and Image items", () => {
+    beforeEach(() => {
+      mocks.findFirst.mockImplementation(async () => ({
+        itemType: { name: currentType },
+        language: null,
         tags: [],
-      });
+      }));
+    });
 
-      const result = await updateItem("item-1", {
-        type,
+    let currentType = "File";
+
+    it.each(["File", "Image"])(
+      "changes only the common fields of a %s item",
+      async (type) => {
+        currentType = type;
+
+        const result = await updateItem("item-1", {
+          type,
+          title: "Renamed",
+          description: "New description",
+          tags: ["docs"],
+        });
+
+        expect(result.success).toBe(true);
+        const { data } = mocks.update.mock.calls[0][0];
+        expect(data).toMatchObject({
+          title: "Renamed",
+          description: "New description",
+        });
+        for (const field of [
+          "content",
+          "url",
+          "language",
+          "fileKey",
+          "fileName",
+          "fileSize",
+          "fileMimeType",
+          "contentType",
+        ]) {
+          expect(data).not.toHaveProperty(field);
+        }
+      },
+    );
+
+    it("ignores file fields sent along with the edit, so the file can't be replaced", async () => {
+      currentType = "Image";
+
+      await updateItem("item-1", {
+        type: "Image",
         title: "Renamed",
         tags: [],
         fileKey: "pending/user-1/3f2b8c1e-9a4d-4e6f-8b1a-2c3d4e5f6a7b",
-        fileName: "a.png",
+        fileName: "other.png",
         fileSize: 10,
         fileMimeType: "image/png",
       });
 
-      expect(result).toEqual({
-        success: false,
-        error: "Files and images can't be edited yet",
+      const { data } = mocks.update.mock.calls[0][0];
+      expect(data).not.toHaveProperty("fileKey");
+      expect(data).not.toHaveProperty("fileName");
+      expect(data).not.toHaveProperty("fileSize");
+    });
+
+    it("can't turn a File into an Image or the other way round", async () => {
+      currentType = "File";
+
+      const result = await updateItem("item-1", {
+        type: "Image",
+        title: "Renamed",
+        tags: [],
       });
-      expect(mocks.consumeMutationQuota).not.toHaveBeenCalled();
-      expect(mocks.findFirst).not.toHaveBeenCalled();
+
+      expect(result).toEqual({ success: false, error: "Item not found" });
       expect(mocks.update).not.toHaveBeenCalled();
-    },
-  );
+    });
+  });
 
   it("rejects invalid input before the rate limit or database", async () => {
     const result = await updateItem("item-1", { ...validSnippet, title: " " });

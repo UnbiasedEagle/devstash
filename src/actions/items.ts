@@ -10,6 +10,7 @@ import {
   isItemLanguage,
   isUploadItemType,
   itemIdSchema,
+  updateItemSchema,
   uploadKindFor,
 } from "@/lib/item-schemas";
 import { FREE_ITEM_LIMIT } from "@/lib/plan-limits";
@@ -36,7 +37,6 @@ class CollectionNotFoundError extends Error {}
 
 const GENERIC_ERROR = "Could not create the item. Try again.";
 const PRO_REQUIRED = "File uploads are part of Pro. Upgrade to upload files.";
-const UPLOADS_NOT_EDITABLE = "Files and images can't be edited yet";
 const ITEM_NOT_FOUND = "Item not found";
 const COLLECTION_NOT_FOUND = "Collection not found";
 
@@ -235,14 +235,11 @@ export async function updateItem(
 
   const parsedId = itemIdSchema.safeParse(id);
   if (!parsedId.success) return { success: false, error: ITEM_NOT_FOUND };
-  const parsed = createItemSchema.safeParse(input);
+  const parsed = updateItemSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: "Check the form and try again" };
   }
   const { type, title, description, tags, collectionId } = parsed.data;
-  if (isUploadItemType(type)) {
-    return { success: false, error: UPLOADS_NOT_EDITABLE };
-  }
 
   if (!(await consumeMutationQuota(userId))) {
     return { success: false, error: MUTATION_LIMIT_MESSAGE };
@@ -289,9 +286,14 @@ export async function updateItem(
           data: {
             title,
             description: description || null,
-            content: "content" in parsed.data ? parsed.data.content : null,
-            url: "url" in parsed.data ? parsed.data.url : null,
-            language,
+            ...(isUploadItemType(type)
+              ? {}
+              : {
+                  content:
+                    "content" in parsed.data ? parsed.data.content : null,
+                  url: "url" in parsed.data ? parsed.data.url : null,
+                  language,
+                }),
             // The edit form always sends the collection, so leaving it out means "None" rather than "unchanged"
             collectionId: collectionId ?? null,
             tags: {
@@ -385,9 +387,9 @@ export async function deleteItem(
         async (tx) => {
           const item = await tx.item.findFirst({
             where: { id: parsedId.data, userId },
-            select: { tags: { select: { tagId: true } } },
+            select: { fileKey: true, tags: { select: { tagId: true } } },
           });
-          if (!item) return false;
+          if (!item) return null;
 
           await tx.item.delete({ where: { id: parsedId.data, userId } });
           await tx.tag.deleteMany({
@@ -397,12 +399,15 @@ export async function deleteItem(
               items: { none: {} },
             },
           });
-          return true;
+          return { fileKey: item.fileKey };
         },
         { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
       ),
     );
     if (!deleted) return { success: false, error: ITEM_NOT_FOUND };
+
+    // Only once the item is really gone, so a failed delete never leaves an item whose file has vanished. A failure here is logged with the key and leaves nothing but an unused object
+    if (deleted.fileKey) await discardStoredFile(deleted.fileKey);
 
     revalidateItemViews();
     return { success: true, data: { id: parsedId.data } };

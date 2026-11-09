@@ -3,7 +3,11 @@ import type { DashboardItem, ItemTypeSummary } from "@/types/dashboard";
 export interface ListItem extends DashboardItem {
   contentType: "TEXT" | "FILE" | "URL";
   url: string | null;
+  // The key is only used on the server to make a short-lived link for an image
+  fileKey: string | null;
   fileName: string | null;
+  fileSize: number | null;
+  fileMimeType: string | null;
   contentPreview: string | null;
 }
 
@@ -36,8 +40,10 @@ export interface DetailItem {
   contentType: "TEXT" | "FILE" | "URL";
   content: string | null;
   url: string | null;
+  fileKey: string | null;
   fileName: string | null;
   fileSize: number | null;
+  fileMimeType: string | null;
   language: string | null;
   isFavorite: boolean;
   isPinned: boolean;
