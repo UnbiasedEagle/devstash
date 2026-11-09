@@ -20,6 +20,14 @@ const emailEnvSchema = z.object({
   EMAIL_FROM: z.string().min(1),
 });
 
+const stripeEnvSchema = z.object({
+  STRIPE_SECRET_KEY: z.string().min(1),
+  // Only the webhook route reads it, so a missing value must not fail the deploy until that route exists
+  STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+  STRIPE_PRICE_MONTHLY: z.string().min(1),
+  STRIPE_PRICE_YEARLY: z.string().min(1),
+});
+
 const flagsEnvSchema = z.object({
   EMAIL_VERIFICATION_ENABLED: z
     .enum(["true", "false"])
@@ -30,6 +38,7 @@ const flagsEnvSchema = z.object({
 export const authEnv = authEnvSchema.parse(process.env);
 export const redisEnv = redisEnvSchema.parse(process.env);
 export const githubEnv = githubEnvSchema.parse(process.env);
+export const stripeEnv = stripeEnvSchema.parse(process.env);
 export const flagsEnv = flagsEnvSchema.parse(process.env);
 
 // Fails the deploy instead of silently shipping unverified sign-ups. VERCEL_ENV, not NODE_ENV, because previews also run with NODE_ENV=production

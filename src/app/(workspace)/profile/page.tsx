@@ -4,10 +4,12 @@ import AccountCard, {
   AccountCardSkeleton,
 } from "@/components/profile/AccountCard";
 import { ChangePasswordForm } from "@/components/profile/ChangePasswordForm";
+import { CheckoutToast } from "@/components/profile/CheckoutToast";
 import { DeleteAccountSection } from "@/components/profile/DeleteAccountSection";
 import { EditNameForm } from "@/components/profile/EditNameForm";
 import { GitHubOnlyNote } from "@/components/profile/GitHubOnlyNote";
 import { SettingsSkeleton } from "@/components/profile/SettingsSkeleton";
+import { UpgradeButtons } from "@/components/profile/UpgradeButtons";
 import UsageCard, { UsageCardSkeleton } from "@/components/profile/UsageCard";
 import { getProfile } from "@/lib/db/profile";
 import { getCurrentUser } from "@/lib/db/user";
@@ -24,6 +26,13 @@ async function UsageSection() {
   const user = await getCurrentUser();
   const profile = await getProfile(user.id);
   return <UsageCard profile={profile} />;
+}
+
+async function UpgradeSection() {
+  await connection();
+  const user = await getCurrentUser();
+  const profile = await getProfile(user.id);
+  return profile.isPro ? null : <UpgradeButtons />;
 }
 
 async function SettingsSection() {
@@ -49,11 +58,17 @@ async function SettingsSection() {
 export default function ProfilePage() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <Suspense fallback={null}>
+        <CheckoutToast />
+      </Suspense>
       <Suspense fallback={<AccountCardSkeleton />}>
         <AccountSection />
       </Suspense>
       <Suspense fallback={<UsageCardSkeleton />}>
         <UsageSection />
+      </Suspense>
+      <Suspense fallback={null}>
+        <UpgradeSection />
       </Suspense>
       <Suspense fallback={<SettingsSkeleton />}>
         <SettingsSection />
