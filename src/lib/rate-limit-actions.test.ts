@@ -16,7 +16,31 @@ vi.mock("@/lib/redis", () => ({ redis: { multi: redisMock.multi } }));
 import {
   consumeMutationQuota,
   consumeSearchQuota,
+  consumeUploadQuota,
 } from "@/lib/rate-limit-actions";
+
+describe("consumeUploadQuota", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    redisMock.chain.incr.mockReturnValue(redisMock.chain);
+    redisMock.chain.expire.mockReturnValue(redisMock.chain);
+  });
+
+  it("allows up to the 10th upload in the window and blocks the 11th", async () => {
+    redisMock.chain.exec.mockResolvedValueOnce([10, 0]);
+    expect(await consumeUploadQuota("user-1")).toBe(true);
+
+    redisMock.chain.exec.mockResolvedValueOnce([11, 0]);
+    expect(await consumeUploadQuota("user-1")).toBe(false);
+  });
+
+  it("counts separately from the other quotas", async () => {
+    redisMock.chain.exec.mockResolvedValueOnce([1, 1]);
+    await consumeUploadQuota("user-42");
+
+    expect(redisMock.chain.incr).toHaveBeenCalledWith("upload-quota:user-42");
+  });
+});
 
 describe("consumeSearchQuota", () => {
   beforeEach(() => {

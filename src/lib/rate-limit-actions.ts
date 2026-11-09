@@ -5,8 +5,11 @@ const MUTATION_LIMIT = 30;
 const MUTATION_WINDOW_SECONDS = 60;
 const SEARCH_LIMIT = 300;
 const SEARCH_WINDOW_SECONDS = 60;
+const UPLOAD_LIMIT = 10;
+const UPLOAD_WINDOW_SECONDS = 60;
 
 export const MUTATION_LIMIT_MESSAGE = "Too many changes, try again in a minute";
+export const UPLOAD_LIMIT_MESSAGE = "Too many uploads, try again in a minute";
 export const SEARCH_LIMIT_MESSAGE = "Too many searches, try again in a minute";
 
 const OUTAGE_LOG_INTERVAL_MS = 60_000;
@@ -49,6 +52,16 @@ export function consumeMutationQuota(userId: string): Promise<boolean> {
     userId,
     MUTATION_LIMIT,
     MUTATION_WINDOW_SECONDS,
+  );
+}
+
+// Much tighter than the mutation quota: every upload link lets someone store up to 10 MB that stays until it is claimed or expires
+export function consumeUploadQuota(userId: string): Promise<boolean> {
+  return consumeQuota(
+    "upload-quota",
+    userId,
+    UPLOAD_LIMIT,
+    UPLOAD_WINDOW_SECONDS,
   );
 }
 

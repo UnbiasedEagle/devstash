@@ -27,6 +27,13 @@ const stripeEnvSchema = z.object({
   STRIPE_PRICE_YEARLY: z.string().min(1),
 });
 
+const r2EnvSchema = z.object({
+  R2_ACCOUNT_ID: z.string().min(1),
+  R2_ACCESS_KEY_ID: z.string().min(1),
+  R2_SECRET_ACCESS_KEY: z.string().min(1),
+  R2_BUCKET: z.string().min(1),
+});
+
 const flagsEnvSchema = z.object({
   EMAIL_VERIFICATION_ENABLED: z
     .enum(["true", "false"])
@@ -38,6 +45,7 @@ export const authEnv = authEnvSchema.parse(process.env);
 export const redisEnv = redisEnvSchema.parse(process.env);
 export const githubEnv = githubEnvSchema.parse(process.env);
 export const stripeEnv = stripeEnvSchema.parse(process.env);
+export const r2Env = r2EnvSchema.parse(process.env);
 export const flagsEnv = flagsEnvSchema.parse(process.env);
 
 // Fails the deploy instead of silently shipping unverified sign-ups. VERCEL_ENV, not NODE_ENV, because previews also run with NODE_ENV=production

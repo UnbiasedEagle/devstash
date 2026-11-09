@@ -16,6 +16,8 @@
     "db:seed": "prisma db seed"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1164.0",
+    "@aws-sdk/s3-request-presigner": "^3.1164.0",
     "@base-ui/react": "^1.9.0",
     "@codemirror/lang-css": "^6.3.1",
     "@codemirror/lang-go": "^6.0.1",

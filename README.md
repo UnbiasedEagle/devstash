@@ -77,9 +77,10 @@ Open [http://localhost:3000](http://localhost:3000) and create an account. A new
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | [Upstash Redis](https://upstash.com) REST credentials, used for rate limiting. Set them in every Vercel environment, or builds fail |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | [Stripe](https://stripe.com) secret key and the signing secret of the webhook endpoint. Use test mode values everywhere until billing is finished. Locally the webhook secret comes from `stripe listen --print-secret`, with `stripe listen --forward-to localhost:3000/api/webhooks/stripe` running. On Vercel, create a webhook endpoint for `{your app URL}/api/webhooks/stripe` listening to `checkout.session.completed`, `customer.subscription.updated` and `customer.subscription.deleted`, and use its signing secret. Set both in every Vercel environment, or builds fail |
 | `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY` | Ids (`price_...`) of the $8 monthly and $72 yearly Pro prices |
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | [Cloudflare R2](https://developers.cloudflare.com/r2/) bucket for uploaded files. Create a private bucket (no public access), an API token with Object Read & Write scoped to that bucket, a CORS rule on the bucket allowing `PUT` with the `Content-Type` header from `http://localhost:3000` and your production domain, and an object lifecycle rule that deletes objects with the `pending/` prefix after 1 day, so uploads that were never saved don't pile up. Set all four in every Vercel environment, or builds fail |
 | `EMAIL_VERIFICATION_ENABLED` | Optional, defaults to `true`. Set to `false` locally to sign up without email verification, for example in browser tests. The build fails if it is `false` on Vercel production. With it off, signing up with an existing email returns an error instead of the generic response |
 
-The auth, GitHub, email, Redis, Stripe and flag variables are validated at startup, so a missing value fails fast instead of breaking at runtime.
+The auth, GitHub, email, Redis, Stripe, R2 and flag variables are validated at startup, so a missing value fails fast instead of breaking at runtime.
 
 ### Scripts
 
