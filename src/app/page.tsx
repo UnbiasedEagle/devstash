@@ -1,3 +1,5 @@
+import { LandingPage } from "@/components/landing/LandingPage";
+
 export default function Home() {
-  return <h1>DevStash</h1>;
+  return <LandingPage />;
 }

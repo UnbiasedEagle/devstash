@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DevStash: never solve the same problem twice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --page: #14161a;
+  --app: #101216;
+  --panel: #1b1e23;
+  --line: #2c3038;
+  --text: #e9ebee;
+  --muted: #9aa1ab;
+  --snippet: #3b82f6;
+  --prompt: #8b5cf6;
+  --command: #f97316;
+  --note: #fde047;
+  --file: #8b93a0;
+  --image: #ec4899;
+  --url: #10b981;
+  --sans: "Schibsted Grotesk", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; margin: 0; }
+html { color-scheme: dark; }
+body { background: var(--page); color: var(--text); font-family: var(--sans); font-size: 1.0625rem; line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: clip; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; border-radius: 4px; }
+.wrap { width: min(70rem, 100% - 3rem); margin-inline: auto; }
+h1, h2 { text-wrap: balance; }
+.ico { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.mark { display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: 8px; background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; font-size: 1.25rem; }
+
+/* header */
+.top { display: flex; align-items: center; justify-content: space-between; padding-block: 1.5rem; }
+.brand { display: inline-flex; align-items: center; gap: 0.625rem; font-weight: 700; font-size: 1.125rem; letter-spacing: -0.01em; text-decoration: none; }
+.nav { display: flex; align-items: center; gap: 1.75rem; font-size: 0.9375rem; }
+.nav a { text-decoration: none; color: var(--muted); }
+.nav a:hover { color: var(--text); }
+.btn { display: inline-flex; align-items: center; justify-content: center; height: 2.75rem; padding-inline: 1.25rem; border-radius: 10px; font-weight: 600; font-size: 1rem; text-decoration: none; border: 1px solid var(--line); }
+.btn-solid { background: var(--text); color: var(--page); border-color: var(--text); }
+.btn-solid:hover { background: #fff; }
+.btn-plain:hover { background: var(--panel); }
+.nav .btn { height: 2.25rem; padding-inline: 1rem; font-size: 0.9375rem; color: var(--page); }
+
+/* hero */
+.hero { padding-top: clamp(1.5rem, 4vw, 3rem); }
+.hero-grid { display: grid; grid-template-columns: 27rem minmax(0, 1fr); gap: clamp(2rem, 4vw, 3rem); align-items: center; }
+h1 { font-size: clamp(2.6rem, 4.2vw, 3.75rem); font-weight: 700; letter-spacing: -0.04em; line-height: 1.02; }
+.lede { margin-top: 1.25rem; color: var(--muted); font-size: 1.1875rem; max-width: 34rem; }
+.cta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem; margin-top: 1.5rem; }
+.note { color: var(--muted); font-size: 0.9375rem; }
+
+/* two pieces of the real UI, layered */
+.compose { position: relative; height: 34rem; }
+.compose .drawer { position: absolute; top: 0; left: 0; width: 26rem; }
+.compose .palette { position: absolute; top: 13rem; right: 0; width: 22.5rem; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5); }
+
+/* shared product pieces */
+.view { background: var(--app); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; font-size: 0.9375rem; }
+.pill { display: inline-flex; align-items: center; gap: 0.375rem; background: color-mix(in oklab, var(--c) 16%, transparent); color: var(--c); font-size: 0.8125rem; font-weight: 600; padding: 0.125rem 0.75rem; border-radius: 999px; }
+.chips { display: flex; gap: 0.375rem; flex-wrap: wrap; }
+.chip { font-size: 0.75rem; background: var(--panel); border-radius: 6px; padding: 0.0625rem 0.5rem; }
+.mini { display: inline-flex; align-items: center; gap: 0.375rem; height: 2.25rem; padding-inline: 0.875rem; border-radius: 8px; border: 1px solid var(--line); font-weight: 500; }
+.mini.on { background: var(--text); color: var(--page); border-color: var(--text); }
+
+.drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 0.875rem 1.25rem; border-bottom: 1px solid var(--line); }
+.drawer-body { padding: 1.25rem; }
+.drawer-body h3 { font-size: 1.375rem; font-weight: 700; letter-spacing: -0.02em; }
+.drawer-body .desc { color: var(--muted); margin-top: 0.25rem; }
+.code { margin-top: 1rem; border: 1px solid var(--line); border-radius: 10px; background: var(--page); overflow: hidden; }
+.code-top { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.875rem; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 0.8125rem; }
+.code pre { font-family: var(--mono); font-size: 0.8125rem; line-height: 1.7; padding: 0.875rem; overflow-x: auto; }
+.k { color: #c4b5fd; } .s { color: #6ee7b7; } .f { color: #7dd3fc; }
+.drawer-foot { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; color: var(--muted); font-size: 0.875rem; }
+
+.palette-in { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.25rem; border-bottom: 1px solid var(--line); font-size: 1.125rem; }
+.palette-in .ico { color: var(--muted); }
+.palette-in kbd { margin-left: auto; font-family: var(--mono); font-size: 0.75rem; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 0.0625rem 0.4rem; }
+.group h6 { font-size: 0.8125rem; font-weight: 500; color: var(--muted); padding: 0.75rem 1.25rem 0.25rem; }
+.hit { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 1.25rem; }
+.hit .ico { color: var(--c); font-size: 1.0625rem; }
+.hit mark { background: none; color: inherit; text-decoration: underline; text-decoration-color: var(--c); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.hit small { margin-left: auto; color: var(--muted); font-size: 0.8125rem; }
+.hit.on { background: var(--panel); }
+.hint { display: flex; gap: 1.25rem; padding: 0.75rem 1.25rem; border-top: 1px solid var(--line); margin-top: 0.5rem; color: var(--muted); font-size: 0.8125rem; }
+
+/* what you can keep */
+.kept { margin-top: 2.5rem; display: flex; flex-wrap: wrap; gap: 0.75rem 2rem; align-items: center; }
+.kept span { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; }
+.kept .ico { color: var(--c); font-size: 1.25rem; }
+
+/* sections */
+section { padding-top: clamp(4.5rem, 9vw, 7.5rem); }
+h2 { font-size: clamp(2rem, 4.2vw, 3.25rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; max-width: 18ch; }
+.sub { margin-top: 1rem; color: var(--muted); max-width: 34rem; }
+
+/* the full dashboard, at full width */
+.shot { margin-top: 2.5rem; height: clamp(26rem, 50vw, 38rem); overflow: hidden; border: 1px solid var(--line); border-bottom: 0; border-radius: 16px 16px 0 0; -webkit-mask-image: linear-gradient(#000 82%, transparent); mask-image: linear-gradient(#000 82%, transparent); }
+.app { display: grid; grid-template-columns: 15rem 1fr; background: var(--app); font-size: 0.9375rem; min-height: 100%; }
+.side { background: var(--page); border-right: 1px solid var(--line); padding: 1rem 0.75rem; }
+.logo { display: flex; align-items: center; gap: 0.625rem; font-weight: 700; font-size: 1.0625rem; padding: 0 0.5rem 1rem; }
+.logo .mark { width: 1.75rem; height: 1.75rem; font-size: 1.125rem; }
+.side h4 { font-size: 0.8125rem; font-weight: 500; color: var(--muted); padding: 0.5rem 0.5rem 0.25rem; }
+.side ul { list-style: none; padding: 0; }
+.side li { display: flex; align-items: center; gap: 0.625rem; padding: 0.4rem 0.5rem; border-radius: 8px; }
+.side li .ico { color: var(--c, var(--muted)); font-size: 1.0625rem; }
+.side li b { margin-left: auto; font-weight: 400; color: var(--muted); font-size: 0.875rem; }
+.side .gap { margin-top: 0.75rem; }
+.main { padding: 0 1.75rem 1.5rem; min-width: 0; }
+.bar { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.75rem; margin-inline: -1.75rem; border-bottom: 1px solid var(--line); }
+.field { display: flex; align-items: center; gap: 0.625rem; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; max-width: 24rem; margin-right: auto; height: 2.25rem; padding-inline: 0.75rem; border-radius: 8px; background: var(--panel); color: var(--muted); }
+.field kbd { margin-left: auto; font-family: var(--mono); font-size: 0.75rem; }
+.main h3 { margin-top: 1.5rem; font-size: 1.625rem; font-weight: 700; letter-spacing: -0.02em; }
+.main .tag-line { color: var(--muted); }
+.main h5 { margin-top: 1.5rem; font-size: 1.0625rem; font-weight: 700; }
+.cards { margin-top: 0.75rem; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
+.card { border: 1px solid var(--line); border-left: 3px solid var(--c); border-radius: 10px; padding: 0.875rem 1rem; }
+.card b { font-weight: 600; }
+.card .n { color: var(--muted); font-size: 0.875rem; }
+.card p { color: var(--muted); font-size: 0.875rem; margin-top: 0.375rem; }
+.card .kinds { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+.card .kinds .ico { color: var(--k); }
+.pinned { margin-top: 0.75rem; display: grid; gap: 0.5rem; }
+.item { display: grid; grid-template-columns: 2.5rem 1fr auto; gap: 0.875rem; align-items: center; border: 1px solid var(--line); border-left: 3px solid var(--c); border-radius: 10px; padding: 0.75rem 1rem; }
+.item .box { width: 2.5rem; height: 2.5rem; border-radius: 8px; display: grid; place-items: center; background: color-mix(in oklab, var(--c) 14%, transparent); color: var(--c); }
+.item b { font-weight: 600; }
+.item p { color: var(--muted); font-size: 0.875rem; }
+.item time { color: var(--muted); font-size: 0.8125rem; }
+.item .chips { margin-top: 0.375rem; }
+
+/* feature rows */
+.feature { display: grid; grid-template-columns: 1fr 1.2fr; gap: clamp(2rem, 6vw, 5rem); align-items: center; }
+.small-list { margin-top: 1.75rem; list-style: none; padding: 0; display: grid; gap: 0.75rem; max-width: 30rem; }
+.small-list li { padding-left: 1.25rem; position: relative; color: var(--muted); }
+.small-list li::before { content: ""; position: absolute; left: 0; top: 0.72em; width: 0.5rem; height: 2px; background: var(--muted); }
+.small-list b { color: var(--text); font-weight: 600; }
+
+.preview { aspect-ratio: 16 / 9; background: var(--page); border-bottom: 1px solid var(--line); display: grid; place-items: center; }
+.preview svg { width: 70%; height: auto; }
+.filebar { display: flex; align-items: center; gap: 0.875rem; padding: 0.875rem 1.25rem; }
+.filebar b { font-weight: 600; display: block; }
+.filebar small { color: var(--muted); font-size: 0.8125rem; }
+.filebar .mini { margin-left: auto; }
+.filebar + .filebar { border-top: 1px solid var(--line); }
+.filebar .box { width: 2.5rem; height: 2.5rem; border-radius: 8px; display: grid; place-items: center; background: color-mix(in oklab, var(--c) 14%, transparent); color: var(--c); }
+
+.coll { padding: 1.25rem; }
+.coll h3 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; }
+.coll .meta { color: var(--muted); font-size: 0.9375rem; }
+.coll ul { list-style: none; padding: 0; margin-top: 1rem; border-top: 1px solid var(--line); }
+.coll li { display: grid; grid-template-columns: 6.5rem 1fr; gap: 1rem; align-items: center; padding-block: 0.75rem; border-bottom: 1px solid var(--line); font-weight: 500; }
+.coll .chips { margin-top: 1rem; }
+
+/* pricing */
+.plans { margin-top: 2.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.plan { padding: 2rem; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 16px; }
+.plan.pro { background: var(--panel); }
+.plan h3 { font-size: 1.0625rem; font-weight: 700; }
+.price { margin-top: 0.75rem; font-size: 3rem; font-weight: 700; letter-spacing: -0.04em; line-height: 1; }
+.price small { font-size: 1rem; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+.plan .alt { margin-top: 0.5rem; color: var(--muted); font-size: 0.9375rem; min-height: 1.5rem; }
+.plan ul { list-style: none; padding: 0; margin: 1.5rem 0 2rem; display: grid; gap: 0.625rem; }
+.plan li { padding-left: 1.25rem; position: relative; }
+.plan li::before { content: ""; position: absolute; left: 0; top: 0.72em; width: 0.5rem; height: 2px; background: var(--muted); }
+.plan .btn { margin-top: auto; width: 100%; }
+
+/* closing */
+.close { margin-top: clamp(4.5rem, 9vw, 7.5rem); border-top: 1px solid var(--line); }
+.close .wrap { padding-block: clamp(3.5rem, 8vw, 6rem); display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 2rem; }
+.close h2 { font-size: clamp(2.25rem, 5vw, 4rem); max-width: 16ch; }
+.close .cta { margin-top: 0; }
+footer { border-top: 1px solid var(--line); padding-block: 1.75rem; color: var(--muted); font-size: 0.9375rem; }
+footer .wrap { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+footer a { text-decoration: none; }
+footer a:hover { color: var(--text); }
+
+@media (max-width: 64rem) {
+  .hero-grid { grid-template-columns: 1fr; align-items: start; }
+  .compose { height: auto; display: grid; gap: 1rem; }
+  .compose .drawer, .compose .palette { position: static; width: 100%; }
+}
+@media (max-width: 60rem) {
+  .feature { grid-template-columns: 1fr; }
+  .plans { grid-template-columns: 1fr; }
+}
+@media (max-width: 52rem) {
+  .app { grid-template-columns: 1fr; }
+  .side { display: none; }
+  .cards { grid-template-columns: 1fr; }
+  .cards .card:nth-child(n+3) { display: none; }
+}
+@media (max-width: 36rem) {
+  .wrap { width: min(70rem, 100% - 2rem); }
+  .nav a:not(.btn) { display: none; }
+  .mini, .field kbd { display: none; }
+  .coll li { grid-template-columns: 1fr; gap: 0.25rem; }
+  .plan { padding: 1.5rem; }
+  .item time { display: none; }
+  .item { grid-template-columns: 2.5rem 1fr; }
+  .filebar .mini { display: none; }
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-code" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></symbol>
+  <symbol id="i-prompt" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 16v4M17 18h4"/></symbol>
+  <symbol id="i-cmd" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3z"/><path d="M15 3v6h6"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9l-.8-1.2A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></symbol>
+</svg>
+
+<header class="wrap top">
+  <a class="brand" href="#"><span class="mark"><svg class="ico"><use href="#i-layers"/></svg></span>DevStash</a>
+  <nav class="nav" aria-label="Main">
+    <a href="#pricing">Pricing</a>
+    <a href="#">Sign in</a>
+    <a class="btn btn-solid" href="#">Get started</a>
+  </nav>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <h1>Never solve the same problem twice.</h1>
+        <p class="lede">DevStash keeps your snippets, commands, prompts, notes and links in one place and finds them with one search.</p>
+        <div class="cta">
+          <a class="btn btn-solid" href="#">Start for free</a>
+          <span class="note">Free for up to 50 items. No card needed.</span>
+        </div>
+      </div>
+
+      <div class="compose" aria-hidden="true">
+        <div class="view drawer">
+          <div class="drawer-head"><span class="pill" style="--c:var(--snippet)"><svg class="ico"><use href="#i-code"/></svg>Snippet</span><span class="mini">Edit</span></div>
+          <div class="drawer-body">
+            <h3>useDebounce hook</h3>
+            <p class="desc">Waits until a value stops changing.</p>
+            <div class="code">
+              <div class="code-top"><span>typescript</span><span style="display:inline-flex;align-items:center;gap:.375rem"><svg class="ico"><use href="#i-copy"/></svg>Copy</span></div>
+<pre><span class="k">export function</span> <span class="f">useDebounce</span>(value, ms) {
+  <span class="k">const</span> [v, setV] = <span class="f">useState</span>(value);
+  <span class="f">useEffect</span>(() =&gt; {
+    <span class="k">const</span> id = <span class="f">setTimeout</span>(
+      () =&gt; <span class="f">setV</span>(value), ms);
+    <span class="k">return</span> () =&gt; <span class="f">clearTimeout</span>(id);
+  }, [value, ms]);
+  <span class="k">return</span> v;
+}</pre>
+            </div>
+            <div class="drawer-foot"><div class="chips"><span class="chip">react</span><span class="chip">hooks</span></div><span style="margin-left:auto">In React Patterns</span></div>
+          </div>
+        </div>
+
+        <div class="view palette">
+          <div class="palette-in"><svg class="ico"><use href="#i-search"/></svg>debounce<kbd>Esc</kbd></div>
+          <div class="group"><h6>Snippets</h6>
+            <div class="hit on" style="--c:var(--snippet)"><svg class="ico"><use href="#i-code"/></svg><span><mark>Debounce</mark> hook</span><small>React Patterns</small></div>
+          </div>
+          <div class="group"><h6>Notes</h6>
+            <div class="hit" style="--c:var(--note)"><svg class="ico"><use href="#i-note"/></svg><span>Debounce vs <mark>throttle</mark></span><small>Decisions</small></div>
+          </div>
+          <div class="group"><h6>Links</h6>
+            <div class="hit" style="--c:var(--url)"><svg class="ico"><use href="#i-link"/></svg><span>Debouncing in React</span><small>Reading</small></div>
+          </div>
+          <div class="hint"><span>Up and down to move</span><span>Enter to open</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="sr">Example of DevStash: a search for "debounce" finds a snippet, a note and a link, and the snippet opens in a drawer with highlighted code and a copy button.</p>
+  </div>
+
+  <div class="wrap">
+    <div class="kept">
+      <span style="--c:var(--snippet)"><svg class="ico"><use href="#i-code"/></svg>Snippets</span>
+      <span style="--c:var(--prompt)"><svg class="ico"><use href="#i-prompt"/></svg>Prompts</span>
+      <span style="--c:var(--command)"><svg class="ico"><use href="#i-cmd"/></svg>Commands</span>
+      <span style="--c:var(--note)"><svg class="ico"><use href="#i-note"/></svg>Notes</span>
+      <span style="--c:var(--file)"><svg class="ico"><use href="#i-file"/></svg>Files</span>
+      <span style="--c:var(--image)"><svg class="ico"><use href="#i-image"/></svg>Images</span>
+      <span style="--c:var(--url)"><svg class="ico"><use href="#i-link"/></svg>Links</span>
+    </div>
+  </div>
+
+  <section class="wrap">
+    <h2>Everything you keep, in one place.</h2>
+    <p class="sub">Seven kinds of item, each with its own color and view. Group them in collections, pin the ones you use daily and find the rest with one search.</p>
+    <div class="shot" aria-hidden="true">
+      <div class="app">
+        <aside class="side">
+          <div class="logo"><span class="mark"><svg class="ico"><use href="#i-layers"/></svg></span>DevStash</div>
+          <h4>Types</h4>
+          <ul>
+            <li style="--c:var(--snippet)"><svg class="ico"><use href="#i-code"/></svg>Snippets<b>24</b></li>
+            <li style="--c:var(--prompt)"><svg class="ico"><use href="#i-prompt"/></svg>Prompts<b>18</b></li>
+            <li style="--c:var(--command)"><svg class="ico"><use href="#i-cmd"/></svg>Commands<b>15</b></li>
+            <li style="--c:var(--note)"><svg class="ico"><use href="#i-note"/></svg>Notes<b>12</b></li>
+            <li style="--c:var(--file)"><svg class="ico"><use href="#i-file"/></svg>Files<b>5</b></li>
+            <li style="--c:var(--image)"><svg class="ico"><use href="#i-image"/></svg>Images<b>3</b></li>
+            <li style="--c:var(--url)"><svg class="ico"><use href="#i-link"/></svg>Links<b>8</b></li>
+          </ul>
+          <h4 class="gap">Collections</h4>
+          <ul>
+            <li><svg class="ico"><use href="#i-folder"/></svg>React Patterns<b>12</b></li>
+            <li><svg class="ico"><use href="#i-folder"/></svg>Context Files<b>5</b></li>
+            <li><svg class="ico"><use href="#i-folder"/></svg>Git Commands<b>15</b></li>
+          </ul>
+        </aside>
+        <div class="main">
+          <div class="bar">
+            <div class="field"><svg class="ico"><use href="#i-search"/></svg>Search items...<kbd>Ctrl K</kbd></div>
+            <span class="mini">New Collection</span>
+            <span class="mini on"><svg class="ico"><use href="#i-plus"/></svg>New Item</span>
+          </div>
+          <h3>Dashboard</h3>
+          <p class="tag-line">Your developer knowledge hub</p>
+          <h5>Collections</h5>
+          <div class="cards">
+            <div class="card" style="--c:var(--snippet)"><b>React Patterns</b><div class="n">12 items</div><p>Common React patterns and hooks</p><div class="kinds"><svg class="ico" style="--k:var(--snippet)"><use href="#i-code"/></svg><svg class="ico" style="--k:var(--note)"><use href="#i-note"/></svg><svg class="ico" style="--k:var(--url)"><use href="#i-link"/></svg></div></div>
+            <div class="card" style="--c:var(--command)"><b>Git Commands</b><div class="n">15 items</div><p>Frequently used git commands</p><div class="kinds"><svg class="ico" style="--k:var(--command)"><use href="#i-cmd"/></svg><svg class="ico" style="--k:var(--note)"><use href="#i-note"/></svg></div></div>
+            <div class="card" style="--c:var(--prompt)"><b>AI Prompts</b><div class="n">18 items</div><p>Curated prompts for coding</p><div class="kinds"><svg class="ico" style="--k:var(--prompt)"><use href="#i-prompt"/></svg><svg class="ico" style="--k:var(--snippet)"><use href="#i-code"/></svg></div></div>
+          </div>
+          <h5>Pinned</h5>
+          <div class="pinned">
+            <div class="item" style="--c:var(--snippet)"><span class="box"><svg class="ico"><use href="#i-code"/></svg></span><div><b>useAuth hook</b><p>Custom authentication hook for React applications</p><div class="chips"><span class="chip">react</span><span class="chip">auth</span><span class="chip">hooks</span></div></div><time>Jan 15</time></div>
+            <div class="item" style="--c:var(--snippet)"><span class="box"><svg class="ico"><use href="#i-code"/></svg></span><div><b>API error handling pattern</b><p>Fetch wrapper with exponential backoff retry logic</p></div><time>Jan 12</time></div>
+            <div class="item" style="--c:var(--command)"><span class="box"><svg class="ico"><use href="#i-cmd"/></svg></span><div><b>Undo last commit, keep changes</b><p>git reset --soft HEAD~1</p></div><time>Jan 9</time></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="sr">The DevStash dashboard, with item types in the sidebar and collections and pinned items in the main area.</p>
+  </section>
+
+  <section class="wrap">
+    <div class="feature">
+      <div>
+        <h2>Files and images, kept with the rest.</h2>
+        <p class="sub">Upload a screenshot or a config next to the snippet it belongs to. Images preview in place and files download with one click.</p>
+      </div>
+      <div class="view" aria-hidden="true">
+        <div class="preview">
+          <svg viewBox="0 0 320 120" fill="none" stroke="#9aa1ab" stroke-width="2"><rect x="8" y="40" width="80" height="40" rx="8"/><rect x="120" y="8" width="80" height="40" rx="8"/><rect x="120" y="72" width="80" height="40" rx="8"/><rect x="232" y="40" width="80" height="40" rx="8" stroke="#ec4899"/><path d="M88 60h16l16-32M88 60h16l16 32M200 28h16l16 32M200 92h16l16-32"/></svg>
+        </div>
+        <div class="filebar" style="--c:var(--image)"><span class="box"><svg class="ico"><use href="#i-image"/></svg></span><div><b>auth-flow.png</b><small>84 KB, image/png</small></div><span class="mini"><svg class="ico"><use href="#i-download"/></svg>Download</span></div>
+        <div class="filebar" style="--c:var(--file)"><span class="box"><svg class="ico"><use href="#i-file"/></svg></span><div><b>docker-compose.prod.yml</b><small>2 KB, application/yaml</small></div><span class="mini"><svg class="ico"><use href="#i-download"/></svg>Download</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="feature">
+      <div>
+        <h2>Group it the way you work.</h2>
+        <p class="sub">A collection can hold anything, so a project's snippet, its setup command and the doc you keep opening sit together.</p>
+        <ul class="small-list">
+          <li><b>Tags</b> link every item that shares one.</li>
+          <li><b>Favorites and pins</b> keep the daily ones on top.</li>
+          <li><b>Export</b> everything as JSON or a ZIP, any time.</li>
+        </ul>
+      </div>
+      <div class="view coll" aria-hidden="true">
+        <h3>React Patterns</h3>
+        <p class="meta">4 items</p>
+        <ul>
+          <li style="--c:var(--snippet)"><span class="pill">Snippet</span><span>useDebounce hook</span></li>
+          <li style="--c:var(--command)"><span class="pill">Command</span><span>npx create-next-app@latest</span></li>
+          <li style="--c:var(--note)"><span class="pill">Note</span><span>When to lift state up</span></li>
+          <li style="--c:var(--url)"><span class="pill">Link</span><span>react.dev, Synchronizing with effects</span></li>
+        </ul>
+        <div class="chips"><span class="chip">hooks</span><span class="chip">react</span><span class="chip">typescript</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="pricing">
+    <h2>Free until you outgrow it.</h2>
+    <div class="plans">
+      <div class="plan">
+        <h3>Free</h3>
+        <p class="price">$0</p>
+        <p class="alt">No card needed.</p>
+        <ul>
+          <li>50 items</li>
+          <li>3 collections</li>
+          <li>Search, tags, favorites and pins</li>
+          <li>Image uploads</li>
+        </ul>
+        <a class="btn btn-plain" href="#">Start for free</a>
+      </div>
+      <div class="plan pro">
+        <h3>Pro</h3>
+        <p class="price">$8 <small>per month</small></p>
+        <p class="alt">Or $72 a year, which saves $24.</p>
+        <ul>
+          <li>Unlimited items and collections</li>
+          <li>File uploads up to 10 MB</li>
+          <li>Export as JSON or ZIP with your files</li>
+        </ul>
+        <a class="btn btn-solid" href="#">Start with Pro</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="close">
+    <div class="wrap">
+      <h2>Your next snippet shouldn't end up in a chat.</h2>
+      <div class="cta">
+        <a class="btn btn-solid" href="#">Start for free</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>DevStash</span>
+    <span><a href="#">Sign in</a> &nbsp;&nbsp; <a href="#">Create an account</a></span>
+  </div>
+</footer>
+</body>
+</html>

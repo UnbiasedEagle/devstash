@@ -7,6 +7,11 @@ import { ProfileSection } from "@/components/profile/ProfileSection";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CheckoutPlan } from "@/lib/billing-schemas";
+import {
+  PRO_MONTHLY_PRICE,
+  PRO_YEARLY_PRICE,
+  PRO_YEARLY_SAVINGS,
+} from "@/lib/plan-limits";
 import type { ActionResult } from "@/types/actions";
 
 type PendingAction = CheckoutPlan | "portal";
@@ -94,7 +99,7 @@ export function PlanCard({ isPro }: { isPro: boolean }) {
     >
       <div className="flex flex-col gap-4">
         <p className="text-sm text-muted-foreground">
-          Pro costs $8 per month or $72 per year, which saves $24 a year.
+          {`Pro costs $${PRO_MONTHLY_PRICE} per month or $${PRO_YEARLY_PRICE} per year, which saves $${PRO_YEARLY_SAVINGS} a year.`}
         </p>
         <div aria-busy={pending !== null} className="flex flex-wrap gap-3">
           <Button
@@ -105,7 +110,9 @@ export function PlanCard({ isPro }: { isPro: boolean }) {
               )
             }
           >
-            {pending === "monthly" ? "Redirecting..." : "Upgrade, $8 per month"}
+            {pending === "monthly"
+              ? "Redirecting..."
+              : `Upgrade, $${PRO_MONTHLY_PRICE} per month`}
           </Button>
           <Button
             variant="outline"
@@ -114,7 +121,9 @@ export function PlanCard({ isPro }: { isPro: boolean }) {
               redirectToStripe("yearly", () => createCheckoutSession("yearly"))
             }
           >
-            {pending === "yearly" ? "Redirecting..." : "Upgrade, $72 per year"}
+            {pending === "yearly"
+              ? "Redirecting..."
+              : `Upgrade, $${PRO_YEARLY_PRICE} per year`}
           </Button>
         </div>
       </div>
