@@ -12,9 +12,10 @@ import {
   MUTATION_LIMIT_MESSAGE,
 } from "@/lib/rate-limit-actions";
 import { stripe } from "@/lib/stripe";
+import { isResourceMissing } from "@/lib/stripe-errors";
 import type { ActionResult } from "@/types/actions";
 
-interface CheckoutSession {
+interface RedirectUrl {
   url: string;
 }
 
@@ -26,6 +27,8 @@ interface CheckoutUser {
 }
 
 const CHECKOUT_ERROR = "Could not start checkout. Try again.";
+const PORTAL_ERROR = "Could not open billing. Try again.";
+const NO_BILLING_ACCOUNT = "You have no billing account yet";
 const ALREADY_PRO = "You are already on Pro";
 const ACTIVATING = "Your subscription is being activated. Refresh in a moment.";
 
@@ -39,15 +42,6 @@ const LIVE_SUBSCRIPTION_STATUSES: Stripe.Subscription.Status[] = [
   "trialing",
   "past_due",
 ];
-
-function isResourceMissing(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    error.code === "resource_missing"
-  );
-}
 
 // Stripe replays the first response for a repeated key, so two checkouts started at once share one customer. The key covers everything the customer is created from and the id it replaces: changed details or a deleted customer get a fresh key instead of a rejected call or a replayed dead customer
 function customerIdempotencyKey(
@@ -106,7 +100,7 @@ async function openCheckout(
   user: CheckoutUser,
   plan: CheckoutPlan,
   replacedCustomerId: string | null = null,
-): Promise<ActionResult<CheckoutSession>> {
+): Promise<ActionResult<RedirectUrl>> {
   if (
     user.stripeCustomerId &&
     (await hasLiveSubscription(user.stripeCustomerId))
@@ -131,7 +125,7 @@ async function openCheckout(
 
 export async function createCheckoutSession(
   input: unknown,
-): Promise<ActionResult<CheckoutSession>> {
+): Promise<ActionResult<RedirectUrl>> {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
     return { success: false, error: "Sign in again to upgrade" };
@@ -180,5 +174,39 @@ export async function createCheckoutSession(
   } catch (error) {
     console.error("createCheckoutSession failed", error);
     return { success: false, error: CHECKOUT_ERROR };
+  }
+}
+
+// Needs a saved customer, not Pro: someone whose subscription ended can still open the portal to see invoices
+export async function createPortalSession(): Promise<
+  ActionResult<RedirectUrl>
+> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) {
+    return { success: false, error: "Sign in again to manage billing" };
+  }
+  const userId = session.user.id;
+
+  if (!(await consumeMutationQuota(userId))) {
+    return { success: false, error: MUTATION_LIMIT_MESSAGE };
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { stripeCustomerId: true },
+    });
+    if (!user?.stripeCustomerId) {
+      return { success: false, error: NO_BILLING_ACCOUNT };
+    }
+
+    const portal = await stripe.billingPortal.sessions.create({
+      customer: user.stripeCustomerId,
+      return_url: `${authEnv.BETTER_AUTH_URL}/profile`,
+    });
+    return { success: true, data: { url: portal.url } };
+  } catch (error) {
+    console.error("createPortalSession failed", error);
+    return { success: false, error: PORTAL_ERROR };
   }
 }

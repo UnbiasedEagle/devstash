@@ -2,6 +2,7 @@ import "server-only";
 import type Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
+import { isResourceMissing } from "@/lib/stripe-errors";
 import { getSubscriptionAccess } from "@/lib/subscription-status";
 
 type StripeRef = string | { id: string };
@@ -22,15 +23,6 @@ const BILLING_USER_SELECT = {
 
 function idOf(ref: StripeRef): string {
   return typeof ref === "string" ? ref : ref.id;
-}
-
-function isResourceMissing(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    error.code === "resource_missing"
-  );
 }
 
 // The hint (the user id our own checkout put on the session) only applies to a user with no customer saved yet, so an event can never bind a customer to someone who already has one

@@ -116,6 +116,7 @@ describe("createCollection", () => {
     expect(result.success === false && result.error).toContain(
       `${FREE_COLLECTION_LIMIT} collections`,
     );
+    expect(result.success === false && result.code).toBe("free_limit");
     expect(mocks.tx.collection.create).not.toHaveBeenCalled();
     expect(mocks.revalidatePath).not.toHaveBeenCalled();
   });

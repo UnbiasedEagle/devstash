@@ -1,16 +1,21 @@
 interface ProfileSectionProps {
+  id?: string;
   title: string;
   description?: string;
   children: React.ReactNode;
 }
 
 export function ProfileSection({
+  id,
   title,
   description,
   children,
 }: ProfileSectionProps) {
   return (
-    <section className="rounded-xl border border-border bg-card p-5">
+    <section
+      id={id}
+      className="scroll-mt-6 rounded-xl border border-border bg-card p-5"
+    >
       <h2 className="text-lg font-semibold">{title}</h2>
       {description && (
         <p className="mt-1 text-sm text-muted-foreground">{description}</p>

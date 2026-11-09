@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   createCustomer: vi.fn(),
   createSession: vi.fn(),
   listSubscriptions: vi.fn(),
+  createPortal: vi.fn(),
 }));
 
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
@@ -35,10 +36,11 @@ vi.mock("@/lib/stripe", () => ({
     customers: { create: mocks.createCustomer },
     checkout: { sessions: { create: mocks.createSession } },
     subscriptions: { list: mocks.listSubscriptions },
+    billingPortal: { sessions: { create: mocks.createPortal } },
   },
 }));
 
-import { createCheckoutSession } from "@/actions/billing";
+import { createCheckoutSession, createPortalSession } from "@/actions/billing";
 
 const freeUser = {
   id: "user-1",
@@ -322,6 +324,79 @@ describe("createCheckoutSession", () => {
 
       expect(result.success).toBe(false);
       expect(mocks.createCustomer).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe("createPortalSession", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.getSession.mockResolvedValue({ user: { id: "user-1" } });
+    mocks.consumeMutationQuota.mockResolvedValue(true);
+    mocks.findUnique.mockResolvedValue({ stripeCustomerId: "cus_saved" });
+    mocks.createPortal.mockResolvedValue({ url: "https://portal.test/p" });
+  });
+
+  it("rejects a signed-out user without calling Stripe", async () => {
+    mocks.getSession.mockResolvedValue(null);
+
+    const result = await createPortalSession();
+
+    expect(result).toEqual({
+      success: false,
+      error: "Sign in again to manage billing",
+    });
+    expect(mocks.createPortal).not.toHaveBeenCalled();
+  });
+
+  it("stops when the mutation limit is used up", async () => {
+    mocks.consumeMutationQuota.mockResolvedValue(false);
+
+    const result = await createPortalSession();
+
+    expect(result).toEqual({
+      success: false,
+      error: "Too many changes, try again in a minute",
+    });
+    expect(mocks.createPortal).not.toHaveBeenCalled();
+  });
+
+  it("rejects a user who has no Stripe customer", async () => {
+    mocks.findUnique.mockResolvedValue({ stripeCustomerId: null });
+
+    const result = await createPortalSession();
+
+    expect(result).toEqual({
+      success: false,
+      error: "You have no billing account yet",
+    });
+    expect(mocks.createPortal).not.toHaveBeenCalled();
+  });
+
+  it("opens the portal for the saved customer and returns to the profile page", async () => {
+    const result = await createPortalSession();
+
+    expect(result).toEqual({
+      success: true,
+      data: { url: "https://portal.test/p" },
+    });
+    expect(mocks.createPortal).toHaveBeenCalledWith({
+      customer: "cus_saved",
+      return_url: "http://localhost:3000/profile",
+    });
+  });
+
+  it("returns a friendly error and not the Stripe message when Stripe fails", async () => {
+    mocks.createPortal.mockRejectedValue(
+      new Error("No configuration provided"),
+    );
+
+    const result = await createPortalSession();
+
+    expect(result).toEqual({
+      success: false,
+      error: "Could not open billing. Try again.",
     });
   });
 });

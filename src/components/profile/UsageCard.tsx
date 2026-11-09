@@ -61,7 +61,11 @@ export default function UsageCard({ profile }: UsageCardProps) {
   return (
     <ProfileSection
       title="Usage"
-      description={profile.isPro ? undefined : "Your free plan limits."}
+      description={
+        profile.isPro
+          ? "Unlimited items and collections on Pro."
+          : "Your free plan limits."
+      }
     >
       <dl className="grid grid-cols-2 gap-4">
         <UsageRow

@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { CREATABLE_ITEM_TYPES, isCreatableItemType } from "@/lib/item-schemas";
+import { showActionError } from "@/lib/show-action-error";
 import type { ItemTypeSummary } from "@/types/dashboard";
 import type { CollectionOption } from "@/types/items";
 
@@ -110,7 +111,7 @@ export default function NewItemDialog({
     try {
       const result = await createItem(validation.data);
       if (!result.success) {
-        toast.error(result.error);
+        showActionError(result);
         return;
       }
       toast.success(`${result.data.type} created`);

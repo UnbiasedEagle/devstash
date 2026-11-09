@@ -88,6 +88,7 @@ export async function createCollection(
       return {
         success: false,
         error: `The free plan is limited to ${FREE_COLLECTION_LIMIT} collections. Upgrade to Pro to add more.`,
+        code: "free_limit",
       };
     }
     console.error("Failed to create collection", error);

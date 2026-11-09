@@ -119,6 +119,7 @@ export async function createItem(
       return {
         success: false,
         error: `The free plan is limited to ${FREE_ITEM_LIMIT} items. Upgrade to Pro to add more.`,
+        code: "free_limit",
       };
     }
     if (

@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { after } from "next/server";
+import { deleteBillingAccount } from "@/lib/billing-cleanup";
 import { sendEmail } from "@/lib/email";
 import { clearEmailQuota, consumeEmailQuota } from "@/lib/email-quota";
 import {
@@ -28,6 +29,7 @@ export const auth = betterAuth({
   user: {
     deleteUser: {
       enabled: true,
+      beforeDelete: deleteBillingAccount,
       // Verification tokens and email counters have no foreign key, so they don't cascade with the user
       afterDelete: async (user) => {
         try {

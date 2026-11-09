@@ -19,6 +19,7 @@ import {
   collectionSchema,
   type CollectionInput,
 } from "@/lib/collection-schemas";
+import { showActionError } from "@/lib/show-action-error";
 import type { ActionResult } from "@/types/actions";
 
 interface CollectionFormValues {
@@ -115,7 +116,7 @@ export default function CollectionFormDialog({
     try {
       const result = await onSubmit(parsed.data);
       if (!result.success) {
-        toast.error(result.error);
+        showActionError(result);
         return;
       }
       toast.success(successMessage);

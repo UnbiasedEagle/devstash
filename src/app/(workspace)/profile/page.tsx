@@ -8,8 +8,8 @@ import { CheckoutToast } from "@/components/profile/CheckoutToast";
 import { DeleteAccountSection } from "@/components/profile/DeleteAccountSection";
 import { EditNameForm } from "@/components/profile/EditNameForm";
 import { GitHubOnlyNote } from "@/components/profile/GitHubOnlyNote";
+import { PlanCard, PlanCardSkeleton } from "@/components/profile/PlanCard";
 import { SettingsSkeleton } from "@/components/profile/SettingsSkeleton";
-import { UpgradeButtons } from "@/components/profile/UpgradeButtons";
 import UsageCard, { UsageCardSkeleton } from "@/components/profile/UsageCard";
 import { getProfile } from "@/lib/db/profile";
 import { getCurrentUser } from "@/lib/db/user";
@@ -28,11 +28,11 @@ async function UsageSection() {
   return <UsageCard profile={profile} />;
 }
 
-async function UpgradeSection() {
+async function PlanSection() {
   await connection();
   const user = await getCurrentUser();
   const profile = await getProfile(user.id);
-  return profile.isPro ? null : <UpgradeButtons />;
+  return <PlanCard isPro={profile.isPro} />;
 }
 
 async function SettingsSection() {
@@ -67,8 +67,8 @@ export default function ProfilePage() {
       <Suspense fallback={<UsageCardSkeleton />}>
         <UsageSection />
       </Suspense>
-      <Suspense fallback={null}>
-        <UpgradeSection />
+      <Suspense fallback={<PlanCardSkeleton />}>
+        <PlanSection />
       </Suspense>
       <Suspense fallback={<SettingsSkeleton />}>
         <SettingsSection />
