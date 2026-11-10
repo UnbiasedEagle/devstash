@@ -51,20 +51,20 @@ Developers scatter their essentials across VS Code, Notion, chat history, bookma
 
 ## Tech stack
 
-| Area          | Choice                                                        |
-| ------------- | ------------------------------------------------------------- |
-| Framework     | Next.js 16 (App Router) and React 19                          |
-| Language      | TypeScript (strict)                                           |
-| Database      | Neon PostgreSQL with Prisma 7                                 |
-| Auth          | Better Auth (email and password, GitHub OAuth)                |
-| Payments      | Stripe                                                        |
-| File storage  | Cloudflare R2                                                 |
-| Email         | Resend                                                        |
-| Rate limiting | Upstash Redis                                                 |
-| UI            | Tailwind CSS v4 and shadcn/ui on Base UI                      |
-| Validation    | Zod                                                           |
-| Tests         | Vitest and Testing Library, with browser checks in Playwright |
-| Hosting       | Vercel, with GitHub Actions running lint, typecheck and tests |
+| Area          | Choice                                                                                                                                                                                |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework     | Next.js 16 (App Router) and React 19                                                                                                                                                  |
+| Language      | TypeScript (strict)                                                                                                                                                                   |
+| Database      | Neon PostgreSQL with Prisma 7                                                                                                                                                         |
+| Auth          | Better Auth (email and password, GitHub OAuth)                                                                                                                                        |
+| Payments      | Stripe                                                                                                                                                                                |
+| File storage  | Cloudflare R2                                                                                                                                                                         |
+| Email         | Resend                                                                                                                                                                                |
+| Rate limiting | Upstash Redis                                                                                                                                                                         |
+| UI            | Tailwind CSS v4 and shadcn/ui on Base UI                                                                                                                                              |
+| Validation    | Zod                                                                                                                                                                                   |
+| Tests         | Vitest and Testing Library, with browser checks in Playwright                                                                                                                         |
+| Hosting       | Vercel, with functions in `sin1` next to the Neon database in `aws-ap-southeast-1` (set in `vercel.json`, change both together), and GitHub Actions running lint, typecheck and tests |
 
 ## How it's built
 
