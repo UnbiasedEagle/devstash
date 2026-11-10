@@ -22,7 +22,6 @@ const mocks = vi.hoisted(() => {
     findItemType: vi.fn(),
     collectionFindFirst: vi.fn(),
     findUser: vi.fn(),
-    itemCount: vi.fn(),
     claimUploadedFile: vi.fn(),
     discardStoredFile: vi.fn(),
     transaction: vi.fn(),
@@ -40,7 +39,6 @@ vi.mock("@/lib/prisma", () => ({
     itemType: { findFirst: mocks.findItemType },
     collection: { findFirst: mocks.collectionFindFirst },
     user: { findUnique: mocks.findUser },
-    item: { count: mocks.itemCount },
     $transaction: mocks.transaction,
   },
 }));
@@ -489,8 +487,8 @@ describe("createItem", () => {
         id: "type-upload",
         name: "File",
       });
-      mocks.findUser.mockResolvedValue({ isPro: false });
-      mocks.itemCount.mockResolvedValue(0);
+      mocks.findUser.mockResolvedValue({ isPro: true });
+      mocks.tx.user.findUnique.mockResolvedValue({ isPro: true });
       mocks.claimUploadedFile.mockResolvedValue({
         ok: true,
         file: {
@@ -545,48 +543,44 @@ describe("createItem", () => {
       expect(saved.fileKey).not.toBe(pendingKey);
     });
 
-    it("lets a free user under the limit save an image", async () => {
-      const result = await createItem(validImage);
+    it.each([
+      ["an image", validImage],
+      ["a file", validFile],
+    ])(
+      "asks a free user to upgrade for %s before touching storage",
+      async (_label, input) => {
+        mocks.findUser.mockResolvedValue({ isPro: false });
 
-      expect(result.success).toBe(true);
-      expect(mocks.itemCount).toHaveBeenCalledWith({
-        where: { userId: "user-1" },
-      });
-    });
+        const result = await createItem(input);
 
-    it("turns a free user at the item limit away before touching storage", async () => {
-      mocks.itemCount.mockResolvedValue(FREE_ITEM_LIMIT);
+        expect(result).toEqual({
+          success: false,
+          error: "Uploads are part of Pro. Upgrade to upload images and files.",
+          code: "pro_required",
+        });
+        expect(mocks.claimUploadedFile).not.toHaveBeenCalled();
+        expect(mocks.transaction).not.toHaveBeenCalled();
+      },
+    );
 
-      const result = await createItem(validImage);
+    it.each([
+      ["an image", validImage],
+      ["a file", validFile],
+    ])(
+      "refuses %s when the Pro plan ended mid-save, and removes the stored file",
+      async (_label, input) => {
+        mocks.tx.user.findUnique.mockResolvedValue({ isPro: false });
 
-      expect(result).toMatchObject({ success: false, code: "free_limit" });
-      expect(mocks.claimUploadedFile).not.toHaveBeenCalled();
-      expect(mocks.transaction).not.toHaveBeenCalled();
-      expect(mocks.discardStoredFile).not.toHaveBeenCalled();
-    });
+        const result = await createItem(input);
 
-    it("doesn't count items for a Pro user, who has no limit", async () => {
-      mocks.findUser.mockResolvedValue({ isPro: true });
-      mocks.tx.user.findUnique.mockResolvedValue({ isPro: true });
-      mocks.itemCount.mockResolvedValue(FREE_ITEM_LIMIT + 10);
-
-      const result = await createItem(validImage);
-
-      expect(result.success).toBe(true);
-      expect(mocks.itemCount).not.toHaveBeenCalled();
-    });
-
-    it("asks a free user to upgrade for a file before touching storage", async () => {
-      const result = await createItem(validFile);
-
-      expect(result).toEqual({
-        success: false,
-        error: "File uploads are part of Pro. Upgrade to upload files.",
-        code: "pro_required",
-      });
-      expect(mocks.claimUploadedFile).not.toHaveBeenCalled();
-      expect(mocks.transaction).not.toHaveBeenCalled();
-    });
+        expect(result).toMatchObject({
+          success: false,
+          code: "pro_required",
+        });
+        expect(mocks.tx.item.create).not.toHaveBeenCalled();
+        expect(mocks.discardStoredFile).toHaveBeenCalledWith(storedKey);
+      },
+    );
 
     it("lets a Pro user save a file", async () => {
       mocks.findUser.mockResolvedValue({ isPro: true });
@@ -615,17 +609,6 @@ describe("createItem", () => {
       });
       expect(mocks.transaction).not.toHaveBeenCalled();
       expect(mocks.discardStoredFile).not.toHaveBeenCalled();
-    });
-
-    it("removes its stored file once when another save takes the last free slot first", async () => {
-      mocks.tx.item.count.mockResolvedValue(FREE_ITEM_LIMIT);
-
-      const result = await createItem(validImage);
-
-      expect(result).toMatchObject({ success: false, code: "free_limit" });
-      expect(mocks.tx.item.create).not.toHaveBeenCalled();
-      expect(mocks.discardStoredFile).toHaveBeenCalledTimes(1);
-      expect(mocks.discardStoredFile).toHaveBeenCalledWith(storedKey);
     });
 
     it("removes the stored file once when saving the item fails", async () => {

@@ -19,12 +19,12 @@ const FREE_FEATURES = [
   `${FREE_ITEM_LIMIT} items`,
   `${FREE_COLLECTION_LIMIT} collections`,
   "Search, tags, favorites and pins",
-  "Image uploads",
 ];
 
 // Only what exists today
 const PRO_FEATURES = [
   "Unlimited items and collections",
+  `Image uploads up to ${formatSizeLimit(MAX_UPLOAD_BYTES.image)}`,
   `File uploads up to ${formatSizeLimit(MAX_UPLOAD_BYTES.file)}`,
   "Custom item types",
   "Export as JSON or ZIP with your files",

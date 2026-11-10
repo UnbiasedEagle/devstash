@@ -34,17 +34,14 @@ describe("showActionError", () => {
   it("adds the same Upgrade button when a Pro feature is needed", () => {
     showActionError({
       success: false,
-      error: "File uploads are part of Pro",
+      error: "Uploads are part of Pro",
       code: "pro_required",
     });
 
-    expect(mocks.toastError).toHaveBeenCalledWith(
-      "File uploads are part of Pro",
-      {
-        duration: 10_000,
-        action: { label: "Upgrade", onClick: expect.any(Function) },
-      },
-    );
+    expect(mocks.toastError).toHaveBeenCalledWith("Uploads are part of Pro", {
+      duration: 10_000,
+      action: { label: "Upgrade", onClick: expect.any(Function) },
+    });
   });
 
   it("opens the plan card in a new tab so the open form keeps its content", () => {

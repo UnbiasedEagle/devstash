@@ -57,6 +57,12 @@ describe("PricingSection", () => {
         `File uploads up to ${formatSizeLimit(MAX_UPLOAD_BYTES.file)}`,
       ),
     ).toBeVisible();
+    expect(
+      pro.getByText(
+        `Image uploads up to ${formatSizeLimit(MAX_UPLOAD_BYTES.image)}`,
+      ),
+    ).toBeVisible();
+    expect(plan("Free").queryByText(/uploads/i)).toBeNull();
     expect(pro.getByText("Custom item types")).toBeVisible();
     expect(
       pro.getByText("Export as JSON or ZIP with your files"),

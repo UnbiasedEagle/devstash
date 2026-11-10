@@ -24,7 +24,8 @@ interface UploadTarget {
 }
 
 const UPLOAD_ERROR = "Could not start the upload. Try again.";
-const PRO_REQUIRED = "File uploads are part of Pro. Upgrade to upload files.";
+const PRO_REQUIRED =
+  "Uploads are part of Pro. Upgrade to upload images and files.";
 
 export async function requestUpload(
   input: unknown,
@@ -49,8 +50,8 @@ export async function requestUpload(
   }
 
   try {
-    // Images are free; every other file is part of Pro, which is checked here and again when the item is saved
-    if (request.kind === "file" && !(await getIsPro(userId))) {
+    // Images and files are both part of Pro, which is checked here and again when the item is saved
+    if (!(await getIsPro(userId))) {
       return { success: false, error: PRO_REQUIRED, code: "pro_required" };
     }
 

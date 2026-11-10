@@ -43,11 +43,12 @@ describe("ItemTypeSelector", () => {
     }
   });
 
-  it("marks File as Pro for a free user and leaves Image unmarked", () => {
+  it("marks File and Image as Pro for a free user and leaves the rest unmarked", () => {
     setup(false);
 
     expect(within(radio("File")).getByText("Pro")).toBeInTheDocument();
-    expect(within(radio("Image")).queryByText("Pro")).not.toBeInTheDocument();
+    expect(within(radio("Image")).getByText("Pro")).toBeInTheDocument();
+    expect(within(radio("Note")).queryByText("Pro")).not.toBeInTheDocument();
   });
 
   it("shows no Pro badge to a Pro user", () => {

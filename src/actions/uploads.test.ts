@@ -43,7 +43,7 @@ describe("requestUpload", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mocks.getSession.mockResolvedValue({ user: { id: "user-1" } });
     mocks.consumeUploadQuota.mockResolvedValue(true);
-    mocks.findUnique.mockResolvedValue({ isPro: false });
+    mocks.findUnique.mockResolvedValue({ isPro: true });
     mocks.createUploadUrl.mockResolvedValue("https://r2.test/upload");
   });
 
@@ -113,27 +113,23 @@ describe("requestUpload", () => {
     expect(mocks.createUploadUrl).not.toHaveBeenCalled();
   });
 
-  it("lets a free user upload an image without looking up their plan", async () => {
-    const result = await requestUpload(image);
+  it.each([
+    ["an image", image],
+    ["a file", file],
+  ])("asks a free user to upgrade for %s", async (_label, request) => {
+    mocks.findUnique.mockResolvedValue({ isPro: false });
 
-    expect(result.success).toBe(true);
-    expect(mocks.findUnique).not.toHaveBeenCalled();
-  });
-
-  it("asks a free user to upgrade for a file", async () => {
-    const result = await requestUpload(file);
+    const result = await requestUpload(request);
 
     expect(result).toEqual({
       success: false,
-      error: "File uploads are part of Pro. Upgrade to upload files.",
+      error: "Uploads are part of Pro. Upgrade to upload images and files.",
       code: "pro_required",
     });
     expect(mocks.createUploadUrl).not.toHaveBeenCalled();
   });
 
   it("lets a Pro user upload a file", async () => {
-    mocks.findUnique.mockResolvedValue({ isPro: true });
-
     const result = await requestUpload(file);
 
     expect(result.success).toBe(true);

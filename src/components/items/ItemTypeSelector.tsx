@@ -2,7 +2,11 @@
 
 import { useRef, type KeyboardEvent } from "react";
 import ProBadge from "@/components/dashboard/ProBadge";
-import { CUSTOM_ITEM_TYPE, isNewItemType } from "@/lib/item-schemas";
+import {
+  CUSTOM_ITEM_TYPE,
+  isNewItemType,
+  isUploadItemType,
+} from "@/lib/item-schemas";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 import { cn } from "@/lib/utils";
 import type { ItemTypeSummary } from "@/types/dashboard";
@@ -70,8 +74,8 @@ export default function ItemTypeSelector({
         const isSelected = isCustom
           ? value === CUSTOM_ITEM_TYPE && customTypeId === type.id
           : value === type.name;
-        // Files are Pro, so free users see the badge; images are free and have none
-        const needsPro = type.name === "File" && !isPro;
+        // Uploads are Pro, so free users see the badge on File and Image
+        const needsPro = isUploadItemType(type.name) && !isPro;
 
         return (
           <button
@@ -87,7 +91,7 @@ export default function ItemTypeSelector({
                 : onChange(type.name)
             }
             className={cn(
-              "flex items-center gap-2 rounded-lg border border-border px-2.5 py-2 text-left text-sm outline-none transition-colors hover:bg-accent/60 focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent",
+              "flex items-center gap-1.5 rounded-lg border border-border px-2 py-2 text-left text-sm outline-none transition-colors hover:bg-accent/60 focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent",
               isSelected && "border-ring bg-accent",
             )}
           >

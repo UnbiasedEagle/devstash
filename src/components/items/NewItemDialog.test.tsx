@@ -361,7 +361,7 @@ describe("NewItemDialog uploads", () => {
     it("hands a refused link request to the error toast and sends nothing", async () => {
       const refused = {
         success: false,
-        error: "File uploads are part of Pro. Upgrade to upload files.",
+        error: "Uploads are part of Pro. Upgrade to upload images and files.",
         code: "pro_required",
       };
       mocks.requestUpload.mockResolvedValue(refused);

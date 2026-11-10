@@ -128,10 +128,10 @@ Postgres treats nulls as distinct, so system-type name uniqueness needs a partia
 
 ## 💰 Monetization
 
-| Plan | Price           | Limits                  | Features                                        |
-| ---- | --------------- | ----------------------- | ----------------------------------------------- |
-| Free | $0              | 50 items, 3 collections | Basic search, image uploads, no AI              |
-| Pro  | $8/mo or $72/yr | Unlimited               | File uploads, custom types, AI features, export |
+| Plan | Price           | Limits                  | Features                                         |
+| ---- | --------------- | ----------------------- | ------------------------------------------------ |
+| Free | $0              | 50 items, 3 collections | Basic search, no uploads, no AI                  |
+| Pro  | $8/mo or $72/yr | Unlimited               | Image and file uploads, custom types, AI, export |
 
 > Stripe for subscriptions + webhooks for syncing
 

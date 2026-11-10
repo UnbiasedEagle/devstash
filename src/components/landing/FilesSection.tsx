@@ -94,7 +94,8 @@ export function FilesSection() {
           <h2 className={HEADING}>Files and images, kept with the rest.</h2>
           <p className={SUBHEADING}>
             Upload a screenshot or a config next to the snippet it belongs to.
-            Images preview in place and files download with one click.
+            Images preview in place and files download with one click. Uploads
+            are part of Pro.
           </p>
         </div>
         <FilesPicture />

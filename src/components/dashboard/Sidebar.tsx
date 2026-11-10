@@ -22,11 +22,11 @@ import { getSidebarCollections } from "@/lib/db/collections";
 import { getItemTypeCounts } from "@/lib/db/item-types";
 import { getCurrentUser } from "@/lib/db/user";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
+import { isUploadItemType } from "@/lib/item-schemas";
 import { getInitials } from "@/lib/user-initials";
 
 const FAVORITE_COLLECTION_LIMIT = 10;
 const RECENT_COLLECTION_LIMIT = 4;
-const PRO_TYPE_NAMES = ["file"];
 
 function SectionLabel({ children }: { children: string }) {
   return (
@@ -79,7 +79,7 @@ function TagsAndTypesLinks() {
 
 function SidebarNavSkeleton() {
   return (
-    <nav className="flex-1 overflow-x-hidden overflow-y-auto px-2 pb-4">
+    <nav className="flex-1 overflow-hidden px-2 pb-4">
       <CollapsibleSection title="Types">
         {Array.from({ length: TYPE_SKELETON_ROWS }, (_, index) => (
           <RowSkeleton key={index} />
@@ -148,7 +148,7 @@ async function SidebarNav() {
               <span className={`flex-1 ${COLLAPSED_INVISIBLE}`}>
                 {type.name}
               </span>
-              {PRO_TYPE_NAMES.includes(type.name.toLowerCase()) && (
+              {isUploadItemType(type.name) && (
                 <span className={COLLAPSED_INVISIBLE}>
                   <ProBadge />
                 </span>

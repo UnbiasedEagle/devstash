@@ -34,11 +34,13 @@ interface CreatedItem {
 }
 
 class FreeLimitError extends Error {}
+class ProRequiredError extends Error {}
 class CollectionNotFoundError extends Error {}
 class TypeNotFoundError extends Error {}
 
 const GENERIC_ERROR = "Could not create the item. Try again.";
-const PRO_REQUIRED = "File uploads are part of Pro. Upgrade to upload files.";
+const PRO_REQUIRED =
+  "Uploads are part of Pro. Upgrade to upload images and files.";
 const ITEM_NOT_FOUND = "Item not found";
 const COLLECTION_NOT_FOUND = "Collection not found";
 const TYPE_NOT_FOUND = "Type not found";
@@ -92,17 +94,9 @@ export async function createItem(
     const upload = parsed.data;
     if (upload.type === "File" || upload.type === "Image") {
       const kind = uploadKindFor(upload.type);
-      // Images are free and files are Pro; requestUpload checks this too, but only the save is what counts
-      const isPro = await getIsPro(userId);
-      if (kind === "file" && !isPro) {
+      // Images and files are both Pro; requestUpload checks this too, but only the save is what counts
+      if (!(await getIsPro(userId))) {
         return { success: false, error: PRO_REQUIRED, code: "pro_required" };
-      }
-      // Claiming a file writes to storage, so a user who is already at the limit is turned away first. The transaction below is still the check that counts
-      if (
-        !isPro &&
-        (await prisma.item.count({ where: { userId } })) >= FREE_ITEM_LIMIT
-      ) {
-        return freeLimitResult();
       }
       const claim = await claimUploadedFile({
         userId,
@@ -123,6 +117,7 @@ export async function createItem(
             where: { id: userId },
             select: { isPro: true },
           });
+          if (storedFile && !user?.isPro) throw new ProRequiredError();
           const itemCount = await tx.item.count({ where: { userId } });
           if (!user?.isPro && itemCount >= FREE_ITEM_LIMIT) {
             throw new FreeLimitError();
@@ -193,6 +188,9 @@ export async function createItem(
   } catch (error) {
     if (storedFile) await discardStoredFile(storedFile.key);
     if (error instanceof FreeLimitError) return freeLimitResult();
+    if (error instanceof ProRequiredError) {
+      return { success: false, error: PRO_REQUIRED, code: "pro_required" };
+    }
     if (error instanceof TypeNotFoundError) {
       return { success: false, error: TYPE_NOT_FOUND };
     }
