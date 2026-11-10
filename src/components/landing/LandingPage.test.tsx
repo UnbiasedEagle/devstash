@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { KindsRow } from "@/components/landing/KindsRow";
 import { LandingPage } from "@/components/landing/LandingPage";
 import { FREE_ITEM_LIMIT } from "@/lib/plan-limits";
+import { HEADLINE } from "@/lib/site-copy";
 
 afterEach(cleanup);
 
@@ -14,9 +15,7 @@ describe("LandingPage", () => {
 
     const headings = screen.getAllByRole("heading", { level: 1 });
     expect(headings).toHaveLength(1);
-    expect(headings[0]).toHaveTextContent(
-      "Never solve the same problem twice.",
-    );
+    expect(headings[0]).toHaveTextContent(HEADLINE);
   });
 
   it("sends every call to start to the sign-up page", () => {

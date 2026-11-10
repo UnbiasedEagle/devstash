@@ -4,6 +4,7 @@ import { ItemDrawerPicture } from "@/components/landing/ItemDrawerPicture";
 import { SearchPicture } from "@/components/landing/SearchPicture";
 import { buttonVariants } from "@/components/ui/button";
 import { FREE_ITEM_LIMIT } from "@/lib/plan-limits";
+import { HEADLINE } from "@/lib/site-copy";
 
 export function HeroSection() {
   return (
@@ -12,9 +13,9 @@ export function HeroSection() {
       <div className="grid items-center gap-8 xl:grid-cols-[27rem_minmax(0,1fr)] xl:gap-12">
         <div>
           <h1 className="text-[clamp(2.6rem,4.2vw,3.75rem)] leading-[1.02] font-bold tracking-[-0.04em] text-balance">
-            Never solve the same problem twice.
+            {HEADLINE}
           </h1>
-          <p className="mt-5 max-w-[34rem] text-[1.1875rem] text-muted-foreground">
+          <p className="mt-5 max-w-136 text-[1.1875rem] text-muted-foreground">
             DevStash keeps your snippets, commands, prompts, notes and links in
             one place and finds them with one search.
           </p>

@@ -7,7 +7,7 @@ export const SECTION_MARGIN = "mt-[clamp(4.5rem,9vw,7.5rem)]";
 export const HEADING =
   "text-[clamp(2rem,4.2vw,3.25rem)] font-bold leading-[1.05] tracking-[-0.03em] text-balance max-w-[18ch]";
 
-export const SUBHEADING = "mt-4 max-w-[34rem] text-muted-foreground";
+export const SUBHEADING = "mt-4 max-w-136 text-muted-foreground";
 
 // Solid, so a picture that overlaps another one hides it instead of showing through
 export const PICTURE_BG = "bg-[#101216]";

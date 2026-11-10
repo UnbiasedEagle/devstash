@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono, Schibsted_Grotesk } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { SITE_ORIGIN } from "@/lib/site-url";
 import "./globals.css";
 
 const schibstedGrotesk = Schibsted_Grotesk({
@@ -14,6 +15,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_ORIGIN),
   title: "DevStash",
   description:
     "One searchable home for your snippets, commands, prompts, notes and links.",
