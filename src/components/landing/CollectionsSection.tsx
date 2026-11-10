@@ -21,12 +21,6 @@ const ROWS: CollectionRow[] = [
   { kind: "Link", title: "react.dev, Synchronizing with effects" },
 ];
 
-const HELPERS = [
-  { name: "Tags", text: "link every item that shares one." },
-  { name: "Favorites and pins", text: "keep the daily ones on top." },
-  { name: "Export", text: "everything as JSON or a ZIP, any time." },
-];
-
 function CollectionPicture() {
   return (
     <div aria-hidden="true" className={`${PICTURE} p-5`}>
@@ -64,16 +58,10 @@ export function CollectionsSection() {
             A collection can hold anything, so a project&apos;s snippet, its
             setup command and the doc you keep opening sit together.
           </p>
-          <ul className="mt-7 grid max-w-120 gap-3">
-            {HELPERS.map(({ name, text }) => (
-              <li
-                key={name}
-                className="relative pl-5 text-muted-foreground before:absolute before:top-[0.72em] before:left-0 before:h-0.5 before:w-2 before:bg-muted-foreground"
-              >
-                <b className="font-semibold text-foreground">{name}</b> {text}
-              </li>
-            ))}
-          </ul>
+          <p className="relative mt-7 max-w-120 pl-5 text-muted-foreground before:absolute before:top-[0.72em] before:left-0 before:h-0.5 before:w-2 before:bg-muted-foreground">
+            <b className="font-semibold text-foreground">Tags</b> link every
+            item that shares one.
+          </p>
         </div>
         <CollectionPicture />
       </div>

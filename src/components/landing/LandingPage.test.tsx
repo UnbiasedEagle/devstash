@@ -3,6 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { KindsRow } from "@/components/landing/KindsRow";
+import { PICTURE_BG } from "@/components/landing/classes";
 import { LandingPage } from "@/components/landing/LandingPage";
 import { FREE_ITEM_LIMIT } from "@/lib/plan-limits";
 import { HEADLINE } from "@/lib/site-copy";
@@ -56,14 +57,79 @@ describe("LandingPage", () => {
 
     expect(screen.getByText(/Example of DevStash/)).toHaveClass("sr-only");
     expect(screen.getByText(/The DevStash dashboard/)).toHaveClass("sr-only");
-    // The item drawer, the search, the dashboard, the files and the collection (icons hide themselves too, so they are left out)
+    // The item drawer, the search, the dashboard, the files, the Markdown editor, the collection, the pins and stars and the export (icons hide themselves too, so they are left out)
     expect(
       container.querySelectorAll('main [aria-hidden="true"]:not(svg)'),
-    ).toHaveLength(5);
+    ).toHaveLength(8);
     expect(screen.queryByRole("heading", { name: "Dashboard" })).toBeNull();
     expect(
       screen.queryByRole("heading", { name: "React Patterns" }),
     ).toBeNull();
+  });
+
+  it("gives each new picture a solid background and no headings of its own", () => {
+    render(<LandingPage />);
+
+    for (const name of [
+      "Write notes and prompts in Markdown.",
+      "Keep the daily ones close.",
+      "Take it with you.",
+    ]) {
+      const section = screen
+        .getByRole("heading", { name })
+        .closest("section") as HTMLElement;
+      const picture = section.querySelector(
+        '[aria-hidden="true"]:not(svg)',
+      ) as HTMLElement;
+      expect(picture.querySelector("h1, h2, h3, h4, h5, h6")).toBeNull();
+      expect(picture.className).toContain(PICTURE_BG);
+    }
+  });
+
+  it("shows the Markdown, favorites and export sections in order after the files and before the plans", () => {
+    render(<LandingPage />);
+
+    const headings = screen
+      .getAllByRole("heading", { level: 2 })
+      .map((heading) => heading.textContent);
+    expect(
+      headings.slice(headings.indexOf("Files and images, kept with the rest.")),
+    ).toEqual([
+      "Files and images, kept with the rest.",
+      "Write notes and prompts in Markdown.",
+      "Group it the way you work.",
+      "Keep the daily ones close.",
+      "Take it with you.",
+      "Free until you outgrow it.",
+      expect.any(String),
+    ]);
+  });
+
+  it("keeps only tags in the collections list, since favorites and export have their own sections", () => {
+    render(<LandingPage />);
+
+    const collections = screen
+      .getByRole("heading", { name: "Group it the way you work." })
+      .closest("section") as HTMLElement;
+    expect(collections).toHaveTextContent("Tags link every item");
+    expect(collections).not.toHaveTextContent(/favorites|pins|export/i);
+  });
+
+  it("draws the pin and the star in the favorites picture", () => {
+    const { container } = render(<LandingPage />);
+
+    expect(container.querySelector("svg.lucide-pin")).not.toBeNull();
+    expect(container.querySelector("svg.lucide-star")).not.toBeNull();
+  });
+
+  it("marks export as Pro and shows both the JSON and the ZIP choice", () => {
+    render(<LandingPage />);
+
+    expect(screen.getByText("Download JSON")).toBeInTheDocument();
+    expect(screen.getByText("Download with files (ZIP)")).toBeInTheDocument();
+    expect(
+      screen.getByText("Export your data").parentElement,
+    ).toHaveTextContent("Pro");
   });
 
   it("has a header, a main area and a footer", () => {
