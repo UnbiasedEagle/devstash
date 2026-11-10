@@ -76,6 +76,7 @@ describe("robots", () => {
       "/collections",
       "/search",
       "/tags",
+      "/types",
       "/api/",
     ]);
   });

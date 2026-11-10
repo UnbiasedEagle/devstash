@@ -1,7 +1,11 @@
 import "server-only";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import type { ItemTypeCount, ItemTypeSummary } from "@/types/dashboard";
+import type {
+  ItemTypeCount,
+  ItemTypeSummary,
+  ManagedItemType,
+} from "@/types/dashboard";
 
 export const itemTypeSummarySelect = {
   id: true,
@@ -62,6 +66,26 @@ export async function getItemTypeCounts(userId: string): Promise<ItemTypeCount[]
       ...itemType,
       count: _count.items,
     }))
+    .sort(
+      (a, b) =>
+        typeRank(a.name) - typeRank(b.name) || a.name.localeCompare(b.name),
+    );
+}
+
+export async function getManagedItemTypes(
+  userId: string,
+): Promise<ManagedItemType[]> {
+  const itemTypes = await prisma.itemType.findMany({
+    where: { OR: [{ userId: null }, { userId }] },
+    select: {
+      ...itemTypeSummarySelect,
+      isSystem: true,
+      _count: { select: { items: { where: { userId } } } },
+    },
+  });
+
+  return itemTypes
+    .map(({ _count, ...itemType }) => ({ ...itemType, count: _count.items }))
     .sort(
       (a, b) =>
         typeRank(a.name) - typeRank(b.name) || a.name.localeCompare(b.name),

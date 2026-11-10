@@ -9,6 +9,10 @@ export interface ItemTypeCount extends ItemTypeSummary {
   count: number;
 }
 
+export interface ManagedItemType extends ItemTypeCount {
+  isSystem: boolean;
+}
+
 export interface DashboardItem {
   id: string;
   title: string;

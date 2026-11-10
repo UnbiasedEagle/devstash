@@ -1,7 +1,14 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { connection } from "next/server";
-import { ChevronRight, Folder, Layers, Star, Tag } from "lucide-react";
+import {
+  ChevronRight,
+  Folder,
+  Layers,
+  Shapes,
+  Star,
+  Tag,
+} from "lucide-react";
 import CollapsibleSection from "@/components/dashboard/CollapsibleSection";
 import MobileAccountCard, {
   MobileAccountCardSkeleton,
@@ -52,7 +59,7 @@ function RowSkeleton() {
 }
 
 // Sits right under the types so it stays in view without scrolling the sidebar
-function TagsLink() {
+function TagsAndTypesLinks() {
   return (
     <>
       <div className={`mx-1 mt-3 border-t border-border ${COLLAPSED_INVISIBLE}`} />
@@ -60,6 +67,10 @@ function TagsLink() {
         <Link href="/tags" className={rowClass}>
           <Tag className="size-4 shrink-0 text-muted-foreground" />
           <span className="flex-1">Tags</span>
+        </Link>
+        <Link href="/types" className={rowClass}>
+          <Shapes className="size-4 shrink-0 text-muted-foreground" />
+          <span className="flex-1">Manage types</span>
         </Link>
       </div>
     </>
@@ -75,7 +86,7 @@ function SidebarNavSkeleton() {
         ))}
       </CollapsibleSection>
 
-      <TagsLink />
+      <TagsAndTypesLinks />
 
       <div className={`mx-1 mt-3 border-t border-border ${COLLAPSED_INVISIBLE}`} />
       <div className={COLLAPSED_INVISIBLE}>
@@ -150,7 +161,7 @@ async function SidebarNav() {
         })}
       </CollapsibleSection>
 
-      <TagsLink />
+      <TagsAndTypesLinks />
 
       <div className={`mx-1 mt-3 border-t border-border ${COLLAPSED_INVISIBLE}`} />
       <div className={COLLAPSED_INVISIBLE}>

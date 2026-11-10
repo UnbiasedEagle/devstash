@@ -1,13 +1,49 @@
 import {
+  BookOpen,
+  Bookmark,
+  Box,
+  Briefcase,
+  Bug,
   Code,
+  Database,
   File,
+  FileText,
+  Globe,
   Image,
+  Key,
+  Lightbulb,
   Link,
+  ListChecks,
+  Package,
+  Palette,
+  Rocket,
+  Settings,
   Sparkles,
   StickyNote,
   Terminal,
+  Wrench,
   type LucideIcon,
 } from "lucide-react";
+import type { CustomTypeIconName } from "@/lib/custom-type-options";
+
+export const CUSTOM_TYPE_ICONS: Record<CustomTypeIconName, LucideIcon> = {
+  BookOpen,
+  Bookmark,
+  Box,
+  Briefcase,
+  Bug,
+  Database,
+  FileText,
+  Globe,
+  Key,
+  Lightbulb,
+  ListChecks,
+  Package,
+  Palette,
+  Rocket,
+  Settings,
+  Wrench,
+};
 
 export const ITEM_TYPE_ICONS: Record<string, LucideIcon> = {
   Code,
@@ -17,4 +53,5 @@ export const ITEM_TYPE_ICONS: Record<string, LucideIcon> = {
   File,
   Image,
   Link,
+  ...CUSTOM_TYPE_ICONS,
 };

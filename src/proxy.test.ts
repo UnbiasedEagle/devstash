@@ -70,6 +70,7 @@ describe("proxy", () => {
       "/collections/:path*",
       "/search/:path*",
       "/tags/:path*",
+      "/types/:path*",
     ]);
   });
 });

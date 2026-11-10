@@ -9,6 +9,7 @@ export const PRIVATE_PATHS = [
   "/collections",
   "/search",
   "/tags",
+  "/types",
   "/api/",
 ];
 
