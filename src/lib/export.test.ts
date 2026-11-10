@@ -3,12 +3,14 @@ import type { ExportData } from "@/types/export";
 
 const mocks = vi.hoisted(() => ({
   collectionFindMany: vi.fn(),
+  itemTypeFindMany: vi.fn(),
   itemFindMany: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     collection: { findMany: mocks.collectionFindMany },
+    itemType: { findMany: mocks.itemTypeFindMany },
     item: { findMany: mocks.itemFindMany },
   },
 }));
@@ -66,6 +68,7 @@ describe("exportChunks", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.collectionFindMany.mockResolvedValue([]);
+    mocks.itemTypeFindMany.mockResolvedValue([]);
     mocks.itemFindMany.mockResolvedValue([]);
   });
 
@@ -76,7 +79,23 @@ describe("exportChunks", () => {
       version: 1,
       exportedAt: "2026-05-06T07:08:09.000Z",
       collections: [],
+      itemTypes: [],
       items: [],
+    });
+  });
+
+  it("lists the user's own item types with their icon and color, and only theirs", async () => {
+    mocks.itemTypeFindMany.mockResolvedValue([
+      { name: "Recipe", icon: "BookOpen", color: "#ef4444" },
+    ]);
+
+    const data = await exportOf("user-1");
+
+    expect(data.itemTypes).toEqual([
+      { name: "Recipe", icon: "BookOpen", color: "#ef4444" },
+    ]);
+    expect(mocks.itemTypeFindMany.mock.calls[0][0].where).toEqual({
+      userId: "user-1",
     });
   });
 

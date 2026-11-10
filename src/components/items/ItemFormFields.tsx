@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  CUSTOM_ITEM_TYPE,
   isUploadItemType,
   itemMetaSchema,
   ITEM_LANGUAGES,
@@ -28,7 +29,9 @@ const CodeEditor = dynamic(() => import("@/components/items/CodeEditor"), {
 });
 
 export interface FormValues {
-  type: NewItemType;
+  type: NewItemType | typeof CUSTOM_ITEM_TYPE;
+  // Which of the user's own types, when `type` is the custom marker
+  customTypeId: string;
   title: string;
   description: string;
   content: string;
@@ -70,6 +73,13 @@ function buildInput(values: FormValues) {
       ...common,
       content: values.content,
       language: values.language || undefined,
+    };
+  }
+  if (values.type === CUSTOM_ITEM_TYPE) {
+    return {
+      ...common,
+      customTypeId: values.customTypeId,
+      content: values.content,
     };
   }
   return { ...common, content: values.content };

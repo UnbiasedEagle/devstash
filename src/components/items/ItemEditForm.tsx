@@ -14,14 +14,22 @@ import ItemFormFields, {
 import { Button } from "@/components/ui/button";
 import { SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { includeCollection } from "@/lib/collection-options";
-import { ITEM_LANGUAGES, type CreatableItemType } from "@/lib/item-schemas";
+import {
+  CUSTOM_ITEM_TYPE,
+  isCustomItemType,
+  isNewItemType,
+  ITEM_LANGUAGES,
+} from "@/lib/item-schemas";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 import type { CollectionOption, DetailItem } from "@/types/items";
 
 function toFormValues(item: DetailItem): FormValues {
   const language = ITEM_LANGUAGES.find((name) => name === item.language);
+  const typeName = item.itemType.name;
+  const isCustom = isCustomItemType(typeName);
   return {
-    type: item.itemType.name as CreatableItemType,
+    type: isNewItemType(typeName) ? typeName : CUSTOM_ITEM_TYPE,
+    customTypeId: isCustom ? item.itemType.id : "",
     title: item.title,
     description: item.description ?? "",
     content: item.content ?? "",

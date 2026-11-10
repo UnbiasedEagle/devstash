@@ -9,7 +9,7 @@ import ItemDrawerHeader from "@/components/items/ItemDrawerHeader";
 import SignedImage from "@/components/items/SignedImage";
 import { SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { getImagePreviewUrl } from "@/lib/file-previews";
-import { isNewItemType } from "@/lib/item-schemas";
+import { isCustomItemType } from "@/lib/item-schemas";
 import { formatFileSize } from "@/lib/upload-rules";
 import type { CollectionOption, DetailItem } from "@/types/items";
 
@@ -42,7 +42,10 @@ function getCopyText(item: DetailItem) {
   if (item.contentType === "URL") {
     return item.url && isHttpUrl(item.url) ? item.url : null;
   }
-  return COPYABLE_TYPES.includes(item.itemType.name) ? item.content : null;
+  return COPYABLE_TYPES.includes(item.itemType.name) ||
+    isCustomItemType(item.itemType.name)
+    ? item.content
+    : null;
 }
 
 function FileBody({
@@ -144,12 +147,7 @@ export default async function ItemDetail({
   const previewUrl = await getImagePreviewUrl(item);
 
   return (
-    <ItemDetailShell
-      key={item.id}
-      item={item}
-      collections={collections}
-      editable={isNewItemType(item.itemType.name)}
-    >
+    <ItemDetailShell key={item.id} item={item} collections={collections}>
       <ItemDrawerHeader
         title={item.title}
         description={item.description}

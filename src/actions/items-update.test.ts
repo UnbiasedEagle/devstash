@@ -82,6 +82,60 @@ describe("updateItem", () => {
     vi.restoreAllMocks();
   });
 
+  describe("custom types", () => {
+    const customNote = {
+      type: "Custom",
+      customTypeId: "type-recipe",
+      title: "Pancakes",
+      content: "Flour, milk, eggs, a pinch of salt",
+      tags: [],
+    };
+
+    beforeEach(() => {
+      mocks.findFirst.mockResolvedValue({
+        itemType: { id: "type-recipe", name: "Recipe", userId: "user-1" },
+        language: null,
+        tags: [],
+      });
+    });
+
+    it("saves the text of an item in the user's own type", async () => {
+      const result = await updateItem("item-1", customNote);
+
+      expect(result.success).toBe(true);
+      expect(mocks.update.mock.calls[0][0].data).toMatchObject({
+        title: "Pancakes",
+        content: "Flour, milk, eggs, a pinch of salt",
+      });
+    });
+
+    it("refuses a different type id, because the type can't change", async () => {
+      const result = await updateItem("item-1", {
+        ...customNote,
+        customTypeId: "type-other",
+      });
+
+      expect(result).toEqual({ success: false, error: "Item not found" });
+      expect(mocks.update).not.toHaveBeenCalled();
+    });
+
+    it("refuses a custom edit of a built-in item, even with that built-in type's public id", async () => {
+      mocks.findFirst.mockResolvedValue({
+        itemType: { id: "type-note", name: "Note", userId: null },
+        language: null,
+        tags: [],
+      });
+
+      const result = await updateItem("item-1", {
+        ...customNote,
+        customTypeId: "type-note",
+      });
+
+      expect(result).toEqual({ success: false, error: "Item not found" });
+      expect(mocks.update).not.toHaveBeenCalled();
+    });
+  });
+
   it("requires a session", async () => {
     mocks.getSession.mockResolvedValue(null);
 

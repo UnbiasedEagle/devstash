@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   CREATABLE_ITEM_TYPES,
+  CUSTOM_ITEM_TYPE,
   isNewItemType,
   isUploadItemType,
   UPLOAD_ITEM_TYPES,
@@ -43,6 +44,7 @@ import type { CollectionOption } from "@/types/items";
 
 const EMPTY_VALUES: FormValues = {
   type: "Snippet",
+  customTypeId: "",
   title: "",
   description: "",
   content: "",
@@ -59,10 +61,12 @@ const DISMISS_REASONS = ["outside-press", "escape-key"];
 
 export default function NewItemDialog({
   itemTypes,
+  customTypes = [],
   collections,
   isPro,
 }: {
   itemTypes: ItemTypeSummary[];
+  customTypes?: ItemTypeSummary[];
   collections: CollectionOption[];
   isPro: boolean;
 }) {
@@ -87,13 +91,17 @@ export default function NewItemDialog({
     setErrors((current) => ({ ...current, [key]: undefined }));
   }
 
-  function selectType(type: string) {
-    if (!isNewItemType(type)) return;
+  function selectType(type: string, customTypeId = "") {
+    if (type !== CUSTOM_ITEM_TYPE && !isNewItemType(type)) return;
     setValues((current) => ({
       ...current,
       type,
+      customTypeId,
       // A file chosen for one kind may not be allowed for another
-      file: current.type === type ? current.file : null,
+      file:
+        current.type === type && current.customTypeId === customTypeId
+          ? current.file
+          : null,
       language:
         type === "Command" && !current.language ? "bash" : current.language,
     }));
@@ -134,10 +142,18 @@ export default function NewItemDialog({
     const preselected = NEW_ITEM_TYPES.find(
       (name) => name.toLowerCase() === slug?.toLowerCase(),
     );
-    const type = preselected ?? EMPTY_VALUES.type;
+    const preselectedCustom = preselected
+      ? undefined
+      : customTypes.find(
+          (customType) => customType.name.toLowerCase() === slug?.toLowerCase(),
+        );
+    const type = preselectedCustom
+      ? CUSTOM_ITEM_TYPE
+      : (preselected ?? EMPTY_VALUES.type);
     setValues({
       ...EMPTY_VALUES,
       type,
+      customTypeId: preselectedCustom?.id ?? "",
       language: type === "Command" ? "bash" : "",
     });
     setErrors({});
@@ -275,7 +291,9 @@ export default function NewItemDialog({
             <div className="-mx-1 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-1 pb-1">
               <ItemTypeSelector
                 itemTypes={itemTypes}
+                customTypes={customTypes}
                 value={values.type}
+                customTypeId={values.customTypeId}
                 disabled={pending}
                 isPro={isPro}
                 onChange={selectType}

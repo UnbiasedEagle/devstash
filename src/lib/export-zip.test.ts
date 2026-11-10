@@ -4,6 +4,7 @@ import type { ExportData } from "@/types/export";
 
 const mocks = vi.hoisted(() => ({
   collectionFindMany: vi.fn(),
+  itemTypeFindMany: vi.fn(),
   itemFindMany: vi.fn(),
   getObjectBytes: vi.fn(),
 }));
@@ -11,6 +12,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     collection: { findMany: mocks.collectionFindMany },
+    itemType: { findMany: mocks.itemTypeFindMany },
     item: { findMany: mocks.itemFindMany },
   },
 }));
@@ -112,6 +114,7 @@ async function zipOf(options?: Parameters<typeof exportZipChunks>[2]) {
 describe("exportZipChunks", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    mocks.itemTypeFindMany.mockResolvedValue([]);
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
 

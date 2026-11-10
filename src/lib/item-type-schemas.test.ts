@@ -5,7 +5,7 @@ import {
   CUSTOM_TYPE_ICON_LABELS,
   CUSTOM_TYPE_ICON_NAMES,
 } from "@/lib/custom-type-options";
-import { CUSTOM_TYPE_ICONS } from "@/lib/item-type-icons";
+import { CUSTOM_TYPE_ICONS, ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 import { itemTypeSchema, MAX_TYPE_NAME_LENGTH } from "@/lib/item-type-schemas";
 
 const VALID = { name: "Recipe", icon: "BookOpen", color: "#ef4444" };
@@ -67,6 +67,12 @@ describe("custom type options", () => {
   it("has an icon for every name in the list", () => {
     for (const name of CUSTOM_TYPE_ICON_NAMES) {
       expect(CUSTOM_TYPE_ICONS[name]).toBeDefined();
+    }
+  });
+
+  it("shows items of a custom type with the icon the user picked, everywhere the app looks icons up", () => {
+    for (const name of CUSTOM_TYPE_ICON_NAMES) {
+      expect(ITEM_TYPE_ICONS[name]).toBe(CUSTOM_TYPE_ICONS[name]);
     }
   });
 

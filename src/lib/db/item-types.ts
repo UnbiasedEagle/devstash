@@ -51,6 +51,16 @@ export async function getSystemItemTypes(): Promise<ItemTypeSummary[]> {
   return itemTypes.sort((a, b) => typeRank(a.name) - typeRank(b.name));
 }
 
+export async function getCustomItemTypes(
+  userId: string,
+): Promise<ItemTypeSummary[]> {
+  return prisma.itemType.findMany({
+    where: { userId },
+    select: itemTypeSummarySelect,
+    orderBy: { name: "asc" },
+  });
+}
+
 export async function getItemTypeCounts(userId: string): Promise<ItemTypeCount[]> {
   const itemTypes = await prisma.itemType.findMany({
     where: { OR: [{ userId: null }, { userId }] },

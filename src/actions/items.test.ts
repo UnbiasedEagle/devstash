@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => {
     user: { findUnique: vi.fn() },
     item: { count: vi.fn(), create: vi.fn() },
     collection: { findFirst: vi.fn() },
+    itemType: { findFirst: vi.fn() },
   };
   return {
     PrismaClientKnownRequestError,
@@ -80,7 +81,10 @@ describe("createItem", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mocks.getSession.mockResolvedValue({ user: { id: "user-1" } });
     mocks.consumeMutationQuota.mockResolvedValue(true);
-    mocks.findItemType.mockResolvedValue({ id: "type-snippet" });
+    mocks.findItemType.mockResolvedValue({
+      id: "type-snippet",
+      name: "Snippet",
+    });
     mocks.transaction.mockImplementation((run) => run(mocks.tx));
     mocks.tx.user.findUnique.mockResolvedValue({ isPro: false });
     mocks.tx.item.count.mockResolvedValue(0);
@@ -102,6 +106,77 @@ describe("createItem", () => {
     });
     expect(mocks.consumeMutationQuota).not.toHaveBeenCalled();
     expect(mocks.transaction).not.toHaveBeenCalled();
+  });
+
+  describe("custom types", () => {
+    const customNote = {
+      type: "Custom",
+      customTypeId: "type-recipe",
+      title: "Pancakes",
+      content: "Flour, milk, eggs",
+      tags: [],
+    };
+
+    beforeEach(() => {
+      mocks.findItemType.mockResolvedValue({
+        id: "type-recipe",
+        name: "Recipe",
+      });
+      mocks.tx.itemType.findFirst.mockResolvedValue({ id: "type-recipe" });
+    });
+
+    it("saves text in the user's own type, looked up by id and owner", async () => {
+      const result = await createItem(customNote);
+
+      expect(result).toEqual({
+        success: true,
+        data: { id: "item-1", type: "Recipe" },
+      });
+      expect(mocks.findItemType).toHaveBeenCalledWith({
+        where: { id: "type-recipe", userId: "user-1" },
+        select: { id: true, name: true },
+      });
+      expect(mocks.tx.item.create.mock.calls[0][0].data).toMatchObject({
+        contentType: "TEXT",
+        content: "Flour, milk, eggs",
+        url: null,
+        itemTypeId: "type-recipe",
+      });
+      expect(mocks.revalidatePath).toHaveBeenCalledWith("/items/recipe");
+    });
+
+    it("answers type not found for another user's or an unknown type", async () => {
+      mocks.findItemType.mockResolvedValue(null);
+
+      const result = await createItem(customNote);
+
+      expect(result).toEqual({ success: false, error: "Type not found" });
+      expect(mocks.transaction).not.toHaveBeenCalled();
+    });
+
+    it("answers type not found when the type is deleted while saving", async () => {
+      mocks.tx.itemType.findFirst.mockResolvedValue(null);
+
+      const result = await createItem(customNote);
+
+      expect(result).toEqual({ success: false, error: "Type not found" });
+      expect(mocks.tx.item.create).not.toHaveBeenCalled();
+    });
+
+    it("keeps the free item limit", async () => {
+      mocks.tx.item.count.mockResolvedValue(FREE_ITEM_LIMIT);
+
+      const result = await createItem(customNote);
+
+      expect(result).toMatchObject({ success: false, code: "free_limit" });
+    });
+
+    it("needs content, like a note", async () => {
+      const result = await createItem({ ...customNote, content: "  " });
+
+      expect(result.success).toBe(false);
+      expect(mocks.findItemType).not.toHaveBeenCalled();
+    });
   });
 
   it("rejects invalid input before using the rate limit or database", async () => {
@@ -247,7 +322,7 @@ describe("createItem", () => {
   });
 
   it("stores a URL item with the URL content type and no content", async () => {
-    mocks.findItemType.mockResolvedValue({ id: "type-url" });
+    mocks.findItemType.mockResolvedValue({ id: "type-url", name: "URL" });
 
     await createItem({
       type: "URL",
@@ -271,7 +346,7 @@ describe("createItem", () => {
 
     expect(mocks.findItemType).toHaveBeenCalledWith({
       where: { name: "Snippet", userId: null },
-      select: { id: true },
+      select: { id: true, name: true },
     });
   });
 
@@ -410,7 +485,10 @@ describe("createItem", () => {
     };
 
     beforeEach(() => {
-      mocks.findItemType.mockResolvedValue({ id: "type-upload" });
+      mocks.findItemType.mockResolvedValue({
+        id: "type-upload",
+        name: "File",
+      });
       mocks.findUser.mockResolvedValue({ isPro: false });
       mocks.itemCount.mockResolvedValue(0);
       mocks.claimUploadedFile.mockResolvedValue({
@@ -425,6 +503,11 @@ describe("createItem", () => {
     });
 
     it("saves an image with the stored file's details", async () => {
+      mocks.findItemType.mockResolvedValue({
+        id: "type-upload",
+        name: "Image",
+      });
+
       const result = await createItem(validImage);
 
       expect(result).toEqual({

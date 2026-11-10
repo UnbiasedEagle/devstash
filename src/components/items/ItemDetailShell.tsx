@@ -11,14 +11,12 @@ import type { CollectionOption, DetailItem } from "@/types/items";
 interface ItemDetailShellProps {
   item: DetailItem;
   collections: CollectionOption[];
-  editable: boolean;
   children: ReactNode;
 }
 
 export default function ItemDetailShell({
   item,
   collections,
-  editable,
   children,
 }: ItemDetailShellProps) {
   const [editing, setEditing] = useState(false);
@@ -50,17 +48,15 @@ export default function ItemDetailShell({
           id={item.id}
           saved={{ isFavorite: item.isFavorite, isPinned: item.isPinned }}
         />
-        {editable && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setEditing(true)}
-          >
-            <Pencil aria-hidden />
-            Edit
-          </Button>
-        )}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setEditing(true)}
+        >
+          <Pencil aria-hidden />
+          Edit
+        </Button>
         <DeleteItemButton id={item.id} title={item.title} />
       </div>
       {children}

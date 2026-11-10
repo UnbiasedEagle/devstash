@@ -95,7 +95,7 @@ export function PlanCard({ isPro }: { isPro: boolean }) {
     <ProfileSection
       id="plan"
       title="Plan"
-      description="You are on the free plan. Pro removes the item and collection limits."
+      description="You are on the free plan. Pro removes the item and collection limits and adds file uploads, custom item types and export."
     >
       <div className="flex flex-col gap-4">
         <p className="text-sm text-muted-foreground">

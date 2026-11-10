@@ -26,6 +26,7 @@ const FREE_FEATURES = [
 const PRO_FEATURES = [
   "Unlimited items and collections",
   `File uploads up to ${formatSizeLimit(MAX_UPLOAD_BYTES.file)}`,
+  "Custom item types",
   "Export as JSON or ZIP with your files",
 ];
 

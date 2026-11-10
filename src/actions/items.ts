@@ -6,6 +6,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
 import { getIsPro } from "@/lib/db/user";
 import {
+  CUSTOM_ITEM_TYPE,
   createItemSchema,
   isItemLanguage,
   isUploadItemType,
@@ -34,11 +35,13 @@ interface CreatedItem {
 
 class FreeLimitError extends Error {}
 class CollectionNotFoundError extends Error {}
+class TypeNotFoundError extends Error {}
 
 const GENERIC_ERROR = "Could not create the item. Try again.";
 const PRO_REQUIRED = "File uploads are part of Pro. Upgrade to upload files.";
 const ITEM_NOT_FOUND = "Item not found";
 const COLLECTION_NOT_FOUND = "Collection not found";
+const TYPE_NOT_FOUND = "Type not found";
 
 function freeLimitResult(): ActionResult<never> {
   return {
@@ -62,6 +65,8 @@ export async function createItem(
     return { success: false, error: "Check the form and try again" };
   }
   const { type, title, description, tags, collectionId } = parsed.data;
+  const customTypeId =
+    parsed.data.type === CUSTOM_ITEM_TYPE ? parsed.data.customTypeId : null;
 
   if (!(await consumeMutationQuota(userId))) {
     return { success: false, error: MUTATION_LIMIT_MESSAGE };
@@ -72,10 +77,17 @@ export async function createItem(
 
   try {
     const itemType = await prisma.itemType.findFirst({
-      where: { name: type, userId: null },
-      select: { id: true },
+      where: customTypeId
+        ? { id: customTypeId, userId }
+        : { name: type, userId: null },
+      select: { id: true, name: true },
     });
-    if (!itemType) return { success: false, error: GENERIC_ERROR };
+    if (!itemType) {
+      return {
+        success: false,
+        error: customTypeId ? TYPE_NOT_FOUND : GENERIC_ERROR,
+      };
+    }
 
     const upload = parsed.data;
     if (upload.type === "File" || upload.type === "Image") {
@@ -122,6 +134,13 @@ export async function createItem(
             });
             if (!collection) throw new CollectionNotFoundError();
           }
+          if (customTypeId) {
+            const stillThere = await tx.itemType.findFirst({
+              where: { id: customTypeId, userId },
+              select: { id: true },
+            });
+            if (!stillThere) throw new TypeNotFoundError();
+          }
 
           return tx.item.create({
             data: {
@@ -161,7 +180,8 @@ export async function createItem(
     );
 
     revalidatePath("/dashboard");
-    revalidatePath(`/items/${type.toLowerCase()}`);
+    revalidatePath(`/items/${itemType.name.toLowerCase()}`);
+    revalidatePath("/types");
     revalidatePath("/search");
     revalidatePath("/tags");
     revalidatePath("/tags/[name]", "page");
@@ -169,10 +189,13 @@ export async function createItem(
       revalidatePath("/collections");
       revalidatePath("/collections/[id]", "page");
     }
-    return { success: true, data: { id: item.id, type } };
+    return { success: true, data: { id: item.id, type: itemType.name } };
   } catch (error) {
     if (storedFile) await discardStoredFile(storedFile.key);
     if (error instanceof FreeLimitError) return freeLimitResult();
+    if (error instanceof TypeNotFoundError) {
+      return { success: false, error: TYPE_NOT_FOUND };
+    }
     if (
       error instanceof CollectionNotFoundError ||
       (await isCollectionGone(error, userId, collectionId))
@@ -221,6 +244,7 @@ function revalidateItemViews() {
   revalidatePath("/collections");
   revalidatePath("/collections/[id]", "page");
   revalidatePath("/profile");
+  revalidatePath("/types");
 }
 
 export async function updateItem(
@@ -250,12 +274,18 @@ export async function updateItem(
       where: { id: parsedId.data, userId },
       select: {
         language: true,
-        itemType: { select: { name: true } },
+        itemType: { select: { id: true, name: true, userId: true } },
         tags: { select: { tagId: true } },
       },
     });
-    // The type can't change, so a submitted type that differs from the stored one is treated as a bad id
-    if (!existing || existing.itemType.name !== type) {
+    // The type can't change, so a submitted type that differs from the stored one is treated as a bad id. A custom type is matched by its id and must be the user's own, because built-in type ids are public
+    const sameType =
+      existing &&
+      (parsed.data.type === CUSTOM_ITEM_TYPE
+        ? existing.itemType.userId === userId &&
+          existing.itemType.id === parsed.data.customTypeId
+        : existing.itemType.name === type);
+    if (!existing || !sameType) {
       return { success: false, error: ITEM_NOT_FOUND };
     }
     if (collectionId) {

@@ -29,6 +29,11 @@ export function isNewItemType(name: string): name is NewItemType {
   return isCreatableItemType(name) || isUploadItemType(name);
 }
 
+// A custom type's name can't be a built-in one, so any other name is one of the user's own types
+export function isCustomItemType(name: string): boolean {
+  return !isNewItemType(name);
+}
+
 export function uploadKindFor(type: UploadItemType): "image" | "file" {
   return type === "Image" ? "image" : "file";
 }
@@ -158,8 +163,19 @@ const textItemSchemas = [
   z.object({ type: z.literal("URL"), ...common, url }),
 ] as const;
 
+// A user's own type holds text like a Note. "Custom" isn't a type name: the type is the id, which the server checks belongs to the user
+export const CUSTOM_ITEM_TYPE = "Custom";
+
+const customItemSchema = z.object({
+  type: z.literal(CUSTOM_ITEM_TYPE),
+  customTypeId: z.string().min(1).max(64),
+  ...common,
+  content,
+});
+
 export const createItemSchema = z.discriminatedUnion("type", [
   ...textItemSchemas,
+  customItemSchema,
   z.object({ type: z.literal("File"), ...common, ...fileFields }),
   z.object({ type: z.literal("Image"), ...common, ...fileFields }),
 ]);
@@ -169,6 +185,7 @@ export type CreateItemInput = z.infer<typeof createItemSchema>;
 // Editing a File or an Image changes only what every item has, never the file itself
 export const updateItemSchema = z.discriminatedUnion("type", [
   ...textItemSchemas,
+  customItemSchema,
   z.object({ type: z.literal("File"), ...common }),
   z.object({ type: z.literal("Image"), ...common }),
 ]);

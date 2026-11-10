@@ -57,11 +57,12 @@ describe("PricingSection", () => {
         `File uploads up to ${formatSizeLimit(MAX_UPLOAD_BYTES.file)}`,
       ),
     ).toBeVisible();
+    expect(pro.getByText("Custom item types")).toBeVisible();
     expect(
       pro.getByText("Export as JSON or ZIP with your files"),
     ).toBeVisible();
     expect(screen.queryByText(/\bAI\b/)).toBeNull();
-    expect(screen.queryByText(/custom/i)).toBeNull();
+    expect(screen.queryByText(/import/i)).toBeNull();
   });
 
   it("sends both plans to sign-up, the free one as a plain start and the Pro one as Pro", () => {

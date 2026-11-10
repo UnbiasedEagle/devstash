@@ -9,6 +9,7 @@ import {
 
 const base: FormValues = {
   type: "Image",
+  customTypeId: "",
   title: "Screenshot",
   description: "",
   content: "",

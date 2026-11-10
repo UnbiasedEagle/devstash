@@ -151,7 +151,13 @@ export async function* exportChunks(
     separator = ",";
   }
 
-  pending += '],"items":[';
+  // At most 20 per user, so no paging
+  const itemTypes = await prisma.itemType.findMany({
+    where: { userId },
+    orderBy: { name: "asc" },
+    select: { name: true, icon: true, color: true },
+  });
+  pending += `],"itemTypes":${JSON.stringify(itemTypes)},"items":[`;
   separator = "";
   // Files and items are read in two passes, so an item with a file that was added in between has neither a path nor a missing entry yet; it is listed here instead of making the export look complete
   const accountedFor = files

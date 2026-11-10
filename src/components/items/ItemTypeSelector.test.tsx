@@ -63,4 +63,49 @@ describe("ItemTypeSelector", () => {
 
     expect(onChange).toHaveBeenCalledWith("Image");
   });
+
+  describe("custom types", () => {
+    const customTypes: ItemTypeSummary[] = [
+      { id: "type-recipe", name: "Recipe", icon: "BookOpen", color: "#ef4444" },
+    ];
+
+    function setupCustom(value: string, customTypeId?: string) {
+      const onChange = vi.fn();
+      render(
+        <ItemTypeSelector
+          itemTypes={itemTypes}
+          customTypes={customTypes}
+          value={value}
+          customTypeId={customTypeId}
+          isPro
+          onChange={onChange}
+        />,
+      );
+      return onChange;
+    }
+
+    it("lists them after the built-in types", () => {
+      setupCustom("Snippet");
+
+      const names = screen
+        .getAllByRole("radio")
+        .map((option) => option.textContent);
+      expect(names.slice(-2)).toEqual(["URL", "Recipe"]);
+    });
+
+    it("reports a custom type with the custom marker and its id", async () => {
+      const onChange = setupCustom("Snippet");
+
+      await userEvent.click(radio("Recipe"));
+
+      expect(onChange).toHaveBeenCalledWith("Custom", "type-recipe");
+    });
+
+    it("marks only the chosen custom type as selected", () => {
+      setupCustom("Custom", "type-recipe");
+
+      expect(radio("Recipe")).toBeChecked();
+      expect(radio("Snippet")).not.toBeChecked();
+    });
+  });
 });

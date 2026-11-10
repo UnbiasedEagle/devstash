@@ -3,7 +3,7 @@ import { connection } from "next/server";
 import NewItemDialog from "@/components/items/NewItemDialog";
 import { Button } from "@/components/ui/button";
 import { getCollectionOptions } from "@/lib/db/collections";
-import { getSystemItemTypes } from "@/lib/db/item-types";
+import { getCustomItemTypes, getSystemItemTypes } from "@/lib/db/item-types";
 import { getCurrentUserId, getIsPro } from "@/lib/db/user";
 
 export function NewItemButtonFallback() {
@@ -22,14 +22,16 @@ export function NewItemButtonFallback() {
 export default async function NewItemButton() {
   await connection();
   const userId = await getCurrentUserId();
-  const [itemTypes, collections, isPro] = await Promise.all([
+  const [itemTypes, customTypes, collections, isPro] = await Promise.all([
     getSystemItemTypes(),
+    getCustomItemTypes(userId),
     getCollectionOptions(userId),
     getIsPro(userId),
   ]);
   return (
     <NewItemDialog
       itemTypes={itemTypes}
+      customTypes={customTypes}
       collections={collections}
       isPro={isPro}
     />

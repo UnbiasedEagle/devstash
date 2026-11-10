@@ -39,10 +39,18 @@ export interface MissingFile {
   reason: MissingFileReason;
 }
 
+export interface ExportItemType {
+  name: string;
+  icon: string;
+  color: string;
+}
+
 export interface ExportData {
   version: 1;
   exportedAt: string;
   collections: ExportCollection[];
+  // The user's own item types; the built-in ones are the same for everyone, so they are left out
+  itemTypes: ExportItemType[];
   items: ExportItem[];
   // Only in a ZIP export: the files that didn't make it into the archive
   missing?: MissingFile[];
