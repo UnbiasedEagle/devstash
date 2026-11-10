@@ -35,19 +35,18 @@ export async function quickSearch(
   }
   if (parsed.status === "empty") return { success: true, data: [] };
 
-  if (!(await consumeSearchQuota(userId))) {
+  // The quota check and the search run together, so the Redis round trip is not added to the database ones. A user over the limit costs one wasted query, and gets no results
+  const [allowed, search] = await Promise.allSettled([
+    consumeSearchQuota(userId),
+    quickSearchItems(userId, parsed.query, QUICK_SEARCH_LIMIT),
+  ]);
+  // consumeSearchQuota never rejects: it allows the request when Redis is down
+  if (allowed.status === "fulfilled" && !allowed.value) {
     return { success: false, error: SEARCH_LIMIT_MESSAGE };
   }
-
-  try {
-    const results = await quickSearchItems(
-      userId,
-      parsed.query,
-      QUICK_SEARCH_LIMIT,
-    );
-    return { success: true, data: results };
-  } catch (error) {
-    console.error("Quick search failed", error);
+  if (search.status === "rejected") {
+    console.error("Quick search failed", search.reason);
     return { success: false, error: "Could not search. Try again." };
   }
+  return { success: true, data: search.value };
 }

@@ -65,15 +65,42 @@ describe("quickSearch", () => {
     expect(mocks.quickSearchItems).not.toHaveBeenCalled();
   });
 
-  it("stops when the search quota is used up", async () => {
+  it("stops when the search quota is used up and returns no results", async () => {
     mocks.consumeSearchQuota.mockResolvedValue(false);
+    mocks.quickSearchItems.mockResolvedValue([{ id: "item-1" }]);
 
     expect(await quickSearch("react")).toEqual({
       success: false,
       error: "Too many searches, try again in a minute",
     });
     expect(mocks.consumeSearchQuota).toHaveBeenCalledWith("user-1");
-    expect(mocks.quickSearchItems).not.toHaveBeenCalled();
+  });
+
+  it("starts the search without waiting for the quota check", async () => {
+    let finishQuota: (allowed: boolean) => void = () => {};
+    mocks.consumeSearchQuota.mockReturnValue(
+      new Promise<boolean>((resolve) => {
+        finishQuota = resolve;
+      }),
+    );
+
+    const pending = quickSearch("react");
+    await vi.waitFor(() =>
+      expect(mocks.quickSearchItems).toHaveBeenCalledTimes(1),
+    );
+    finishQuota(true);
+
+    expect(await pending).toEqual({ success: true, data: [] });
+  });
+
+  it("reports the quota limit even when the search itself failed", async () => {
+    mocks.consumeSearchQuota.mockResolvedValue(false);
+    mocks.quickSearchItems.mockRejectedValue(new Error("db down"));
+
+    expect(await quickSearch("react")).toEqual({
+      success: false,
+      error: "Too many searches, try again in a minute",
+    });
   });
 
   it("returns a friendly error when the query fails", async () => {
