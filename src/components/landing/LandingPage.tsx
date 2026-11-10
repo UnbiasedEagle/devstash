@@ -6,6 +6,7 @@ import { ExportSection } from "@/components/landing/ExportSection";
 import { FavoritesSection } from "@/components/landing/FavoritesSection";
 import { FilesSection } from "@/components/landing/FilesSection";
 import { HeroSection } from "@/components/landing/HeroSection";
+import { ImportSection } from "@/components/landing/ImportSection";
 import { KindsRow } from "@/components/landing/KindsRow";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 import { LandingHeader } from "@/components/landing/LandingHeader";
@@ -27,6 +28,7 @@ export function LandingPage() {
         <FavoritesSection />
         <ExportSection />
         <CustomTypesSection />
+        <ImportSection />
         <PricingSection />
         <ClosingSection />
       </main>

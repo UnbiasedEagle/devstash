@@ -58,10 +58,10 @@ describe("LandingPage", () => {
 
     expect(screen.getByText(/Example of DevStash/)).toHaveClass("sr-only");
     expect(screen.getByText(/The DevStash dashboard/)).toHaveClass("sr-only");
-    // The item drawer, the search, the dashboard, the files, the Markdown editor, the collection, the pins and stars, the export and the custom type (icons hide themselves too, so they are left out)
+    // The item drawer, the search, the dashboard, the files, the Markdown editor, the collection, the pins and stars, the export, the custom type and the import (icons hide themselves too, so they are left out)
     expect(
       container.querySelectorAll('main [aria-hidden="true"]:not(svg)'),
-    ).toHaveLength(9);
+    ).toHaveLength(10);
     expect(screen.queryByRole("heading", { name: "Dashboard" })).toBeNull();
     expect(
       screen.queryByRole("heading", { name: "React Patterns" }),
@@ -76,6 +76,7 @@ describe("LandingPage", () => {
       "Keep the daily ones close.",
       "Take it with you.",
       "Make your own types.",
+      "Bring your files in.",
     ]) {
       const section = screen
         .getByRole("heading", { name })
@@ -88,7 +89,7 @@ describe("LandingPage", () => {
     }
   });
 
-  it("shows the Markdown, favorites, export and custom type sections in order after the files and before the plans", () => {
+  it("shows the Markdown, favorites, export, custom type and import sections in order after the files and before the plans", () => {
     render(<LandingPage />);
 
     const headings = screen
@@ -103,6 +104,7 @@ describe("LandingPage", () => {
       "Keep the daily ones close.",
       "Take it with you.",
       "Make your own types.",
+      "Bring your files in.",
       "Free until you outgrow it.",
       expect.any(String),
     ]);
@@ -123,6 +125,33 @@ describe("LandingPage", () => {
 
     expect(container.querySelector("svg.lucide-pin")).not.toBeNull();
     expect(container.querySelector("svg.lucide-star")).not.toBeNull();
+  });
+
+  it("shows the files an import would take, what each becomes, the one it refuses and the free import button", () => {
+    render(<LandingPage />);
+
+    const section = screen
+      .getByRole("heading", { name: "Bring your files in." })
+      .closest("section") as HTMLElement;
+    expect(section).toHaveTextContent("It's free");
+    const picture = section.querySelector(
+      '[aria-hidden="true"]',
+    ) as HTMLElement;
+    for (const text of [
+      "Import files",
+      "ideas.md",
+      "Note",
+      "deploy.sh",
+      "Snippet · bash",
+      "util.ts",
+      "Snippet · typescript",
+      "photo.png",
+      "Not a supported file type",
+      "Import 3 files",
+    ]) {
+      expect(picture).toHaveTextContent(text);
+    }
+    expect(picture).not.toHaveTextContent("Pro");
   });
 
   it("marks custom types as Pro and draws the name, icon and color choices with the finished type", () => {
