@@ -5,8 +5,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import { KindsRow } from "@/components/landing/KindsRow";
 import { PICTURE_BG } from "@/components/landing/classes";
 import { LandingPage } from "@/components/landing/LandingPage";
+import { CUSTOM_TYPE_COLORS } from "@/lib/custom-type-options";
 import { FREE_ITEM_LIMIT } from "@/lib/plan-limits";
-import { HEADLINE } from "@/lib/site-copy";
+import { GITHUB_URL, HEADLINE } from "@/lib/site-copy";
 
 afterEach(cleanup);
 
@@ -57,10 +58,10 @@ describe("LandingPage", () => {
 
     expect(screen.getByText(/Example of DevStash/)).toHaveClass("sr-only");
     expect(screen.getByText(/The DevStash dashboard/)).toHaveClass("sr-only");
-    // The item drawer, the search, the dashboard, the files, the Markdown editor, the collection, the pins and stars and the export (icons hide themselves too, so they are left out)
+    // The item drawer, the search, the dashboard, the files, the Markdown editor, the collection, the pins and stars, the export and the custom type (icons hide themselves too, so they are left out)
     expect(
       container.querySelectorAll('main [aria-hidden="true"]:not(svg)'),
-    ).toHaveLength(8);
+    ).toHaveLength(9);
     expect(screen.queryByRole("heading", { name: "Dashboard" })).toBeNull();
     expect(
       screen.queryByRole("heading", { name: "React Patterns" }),
@@ -74,6 +75,7 @@ describe("LandingPage", () => {
       "Write notes and prompts in Markdown.",
       "Keep the daily ones close.",
       "Take it with you.",
+      "Make your own types.",
     ]) {
       const section = screen
         .getByRole("heading", { name })
@@ -86,7 +88,7 @@ describe("LandingPage", () => {
     }
   });
 
-  it("shows the Markdown, favorites and export sections in order after the files and before the plans", () => {
+  it("shows the Markdown, favorites, export and custom type sections in order after the files and before the plans", () => {
     render(<LandingPage />);
 
     const headings = screen
@@ -100,6 +102,7 @@ describe("LandingPage", () => {
       "Group it the way you work.",
       "Keep the daily ones close.",
       "Take it with you.",
+      "Make your own types.",
       "Free until you outgrow it.",
       expect.any(String),
     ]);
@@ -122,6 +125,40 @@ describe("LandingPage", () => {
     expect(container.querySelector("svg.lucide-star")).not.toBeNull();
   });
 
+  it("marks custom types as Pro and draws the name, icon and color choices with the finished type", () => {
+    render(<LandingPage />);
+
+    const section = screen
+      .getByRole("heading", { name: "Make your own types." })
+      .closest("section") as HTMLElement;
+    expect(section).toHaveTextContent("A Pro feature");
+    const picture = section.querySelector(
+      '[aria-hidden="true"]',
+    ) as HTMLElement;
+    for (const text of ["New type", "Pro", "Name", "Icon", "Color", "Recipe"]) {
+      expect(picture).toHaveTextContent(text);
+    }
+  });
+
+  it("draws only colors that the real custom type picker offers", () => {
+    render(<LandingPage />);
+
+    const picture = screen
+      .getByRole("heading", { name: "Make your own types." })
+      .closest("section")
+      ?.querySelector('[aria-hidden="true"]') as HTMLElement;
+    // The picture's own solid background is not one of the type colors
+    const drawn = new Set(
+      picture.outerHTML
+        .replace(PICTURE_BG.replace("bg-", ""), "")
+        .match(/#[0-9a-f]{6}/gi),
+    );
+    expect(drawn.size).toBeGreaterThan(0);
+    for (const color of drawn) {
+      expect(CUSTOM_TYPE_COLORS as readonly string[]).toContain(color);
+    }
+  });
+
   it("marks export as Pro and shows both the JSON and the ZIP choice", () => {
     render(<LandingPage />);
 
@@ -130,6 +167,26 @@ describe("LandingPage", () => {
     expect(
       screen.getByText("Export your data").parentElement,
     ).toHaveTextContent("Pro");
+  });
+
+  it("links to the project on GitHub from the header and the footer, opening in a new tab", () => {
+    render(<LandingPage />);
+
+    const links = screen.getAllByRole("link", { name: "GitHub" });
+    expect(links).toHaveLength(2);
+    for (const link of links) {
+      expect(link).toHaveAttribute("href", GITHUB_URL);
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
+    }
+    expect(
+      within(screen.getByRole("banner")).getByRole("link", { name: "GitHub" }),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("contentinfo")).getByRole("link", {
+        name: "GitHub",
+      }),
+    ).toBeInTheDocument();
   });
 
   it("has a header, a main area and a footer", () => {

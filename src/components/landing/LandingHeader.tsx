@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CONTAINER, LINK_FOCUS } from "@/components/landing/classes";
 import { LogoMark } from "@/components/landing/LogoMark";
 import { buttonVariants } from "@/components/ui/button";
+import { GITHUB_URL } from "@/lib/site-copy";
 
 const NAV_LINK = `hidden text-muted-foreground hover:text-foreground sm:inline ${LINK_FOCUS}`;
 
@@ -21,6 +22,14 @@ export function LandingHeader() {
       >
         <a href="#pricing" className={NAV_LINK}>
           Pricing
+        </a>
+        <a
+          href={GITHUB_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={NAV_LINK}
+        >
+          GitHub
         </a>
         <Link href="/sign-in" className={NAV_LINK}>
           Sign in

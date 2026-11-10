@@ -2,3 +2,5 @@
 export const HEADLINE = "Never solve the same problem twice.";
 
 export const PAGE_TITLE = "DevStash: never solve the same problem twice";
+
+export const GITHUB_URL = "https://github.com/UnbiasedEagle/devstash";

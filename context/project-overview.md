@@ -19,7 +19,7 @@ Developers keep their essentials scattered:
 
 This creates **context switching, lost knowledge** and **inconsistent workflows**.
 
-➡️ **DevStash provides ONE searchable, AI‑enhanced hub for all dev knowledge & resources.**
+➡️ **DevStash provides ONE searchable hub for all dev knowledge & resources.**
 
 ---
 
@@ -83,14 +83,7 @@ Full‑text search across:
 - File uploads (images, docs, templates)
 - Export (JSON / ZIP)
 
-### F) AI Superpowers
-
-- Auto‑tagging
-- AI summaries
-- Explain Code
-- Prompt optimization
-
-> AI powered by **OpenAI gpt-5-nano**
+> AI features are out of scope for this project.
 
 ---
 
@@ -120,7 +113,6 @@ Postgres treats nulls as distinct, so system-type name uniqueness needs a partia
 | File Storage | Cloudflare R2                |
 | CSS/UI       | Tailwind CSS v4 + ShadCN     |
 | Auth         | Better Auth (email + GitHub) |
-| AI           | OpenAI gpt-5-nano            |
 | Deployment   | Vercel (likely)              |
 | Monitoring   | Sentry (later)               |
 
@@ -128,10 +120,10 @@ Postgres treats nulls as distinct, so system-type name uniqueness needs a partia
 
 ## 💰 Monetization
 
-| Plan | Price           | Limits                  | Features                                         |
-| ---- | --------------- | ----------------------- | ------------------------------------------------ |
-| Free | $0              | 50 items, 3 collections | Basic search, no uploads, no AI                  |
-| Pro  | $8/mo or $72/yr | Unlimited               | Image and file uploads, custom types, AI, export |
+| Plan | Price           | Limits                  | Features                                     |
+| ---- | --------------- | ----------------------- | -------------------------------------------- |
+| Free | $0              | 50 items, 3 collections | Basic search, no uploads                     |
+| Pro  | $8/mo or $72/yr | Unlimited               | Image and file uploads, custom types, export |
 
 > Stripe for subscriptions + webhooks for syncing
 
@@ -175,7 +167,6 @@ graph TD;
   Client <--> Actions[Server Actions]
   Actions --> Postgres[(Neon DB)]
   Actions --> R2[(File Storage)]
-  Actions --> OpenAI
   Actions --> Redis[(Cache)]
 ```
 
@@ -190,18 +181,6 @@ flowchart LR
   BetterAuth --> Providers{Email / GitHub}
   Providers --> Session
   Session --> AppAccess
-```
-
----
-
-## 🧠 AI Feature Flow
-
-```mermaid
-flowchart TD
-  ItemContent --> Actions[Server Action]
-  Actions --> OpenAI
-  OpenAI --> Suggestions{{Tags / Summary / Explain Code}}
-  Suggestions --> UI_Update
 ```
 
 ---
@@ -233,7 +212,6 @@ git switch -c feature/setup
 
 ### **Pro Phase**
 
-- AI features
 - Custom item types
 - File uploads
 - Export

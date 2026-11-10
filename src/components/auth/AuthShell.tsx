@@ -1,14 +1,19 @@
 import { Layers } from "lucide-react";
+import Link from "next/link";
 import { StashPreview } from "@/components/auth/StashPreview";
 
 function Brand() {
   return (
-    <div className="flex items-center gap-2">
+    <Link
+      href="/"
+      aria-label="DevStash home"
+      className="flex w-fit items-center gap-2 rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+    >
       <div className="flex size-8 items-center justify-center rounded-lg bg-linear-to-br from-indigo-500 to-purple-500 text-white">
         <Layers className="size-5" />
       </div>
       <span className="text-lg font-semibold">DevStash</span>
-    </div>
+    </Link>
   );
 }
 

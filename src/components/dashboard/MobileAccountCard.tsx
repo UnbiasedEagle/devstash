@@ -25,7 +25,17 @@ export function MobileAccountCardSkeleton() {
           <Skeleton className="h-3 w-36" />
         </div>
       </div>
-      <div className="h-22 border-t border-border" />
+      <div
+        aria-hidden
+        className="divide-y divide-border border-t border-border"
+      >
+        {[0, 1].map((row) => (
+          <div key={row} className="flex h-11 items-center gap-3 px-3">
+            <Skeleton className="size-4 shrink-0" />
+            <Skeleton className="h-3.5 w-16" />
+          </div>
+        ))}
+      </div>
     </CardShell>
   );
 }

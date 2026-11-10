@@ -1,5 +1,6 @@
 import { ClosingSection } from "@/components/landing/ClosingSection";
 import { CollectionsSection } from "@/components/landing/CollectionsSection";
+import { CustomTypesSection } from "@/components/landing/CustomTypesSection";
 import { DashboardSection } from "@/components/landing/DashboardSection";
 import { ExportSection } from "@/components/landing/ExportSection";
 import { FavoritesSection } from "@/components/landing/FavoritesSection";
@@ -25,6 +26,7 @@ export function LandingPage() {
         <CollectionsSection />
         <FavoritesSection />
         <ExportSection />
+        <CustomTypesSection />
         <PricingSection />
         <ClosingSection />
       </main>
