@@ -20,6 +20,7 @@ import {
   consumeMutationQuota,
   MUTATION_LIMIT_MESSAGE,
 } from "@/lib/rate-limit-actions";
+import { revalidateItemViews } from "@/lib/revalidate-item-views";
 import {
   claimUploadedFile,
   discardStoredFile,
@@ -231,18 +232,6 @@ async function isCollectionGone(
     select: { id: true },
   });
   return collection === null;
-}
-
-function revalidateItemViews() {
-  revalidatePath("/dashboard");
-  revalidatePath("/items/[type]", "page");
-  revalidatePath("/search");
-  revalidatePath("/tags");
-  revalidatePath("/tags/[name]", "page");
-  revalidatePath("/collections");
-  revalidatePath("/collections/[id]", "page");
-  revalidatePath("/profile");
-  revalidatePath("/types");
 }
 
 export async function updateItem(

@@ -6,7 +6,7 @@ Developers scatter their essentials across VS Code, Notion, chat history, bookma
 
 **Live:** [getdevstash.com](https://getdevstash.com)
 
-> **Status:** the core product is built, from items and collections to search, billing, uploads and export. Import from files is the one feature still ahead. See [Roadmap](#roadmap).
+> **Status:** feature complete. Items, collections, search, billing, uploads, export, custom types and import are all built. See [Roadmap](#roadmap).
 
 ## What works today
 
@@ -15,6 +15,7 @@ Developers scatter their essentials across VS Code, Notion, chat history, bookma
   - Create, edit and delete from a New Item dialog and a detail drawer, with tags and an optional collection
   - Syntax-highlighted code, a Markdown editor with Write and Preview for notes and prompts, and a copy button
   - Favorites and pins, with pinned and recent items on the dashboard
+  - Import up to 20 text and code files at once: Markdown and text files become Notes, code files become Snippets with the language from the extension
 - **Collections** that mix item types, with favorites and a detail page for each
 - **Search**
   - A search popup opened with `Cmd/Ctrl+K` or `/`, with grouped results and highlighted matches
@@ -138,10 +139,7 @@ The auth, GitHub, email, Redis, Stripe, R2 and flag variables are validated at s
 - [x] Export as JSON or ZIP (Pro)
 - [x] Custom item types (Pro)
 - [x] Landing page
-
-**Next**
-
-- [ ] Import from files
+- [x] Import from files
 
 ## Project layout
 
@@ -160,4 +158,4 @@ Tests live next to the code as `*.test.ts(x)`.
 
 ## License
 
-No license has been chosen yet, so all rights are reserved for now.
+[MIT](LICENSE)

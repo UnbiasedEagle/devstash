@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import NewCollectionDialog from "@/components/collections/NewCollectionDialog";
+import ImportDialog from "@/components/items/ImportDialog";
 import NewItemButton, {
   NewItemButtonFallback,
 } from "@/components/items/NewItemButton";
@@ -11,6 +12,7 @@ export default function TopBar() {
       <SearchPalette />
       <div className="ml-auto flex shrink-0 items-center gap-2">
         <NewCollectionDialog />
+        <ImportDialog />
         <Suspense fallback={<NewItemButtonFallback />}>
           <NewItemButton />
         </Suspense>
